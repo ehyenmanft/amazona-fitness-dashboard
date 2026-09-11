@@ -269,47 +269,6 @@ export default function App() {
         />
 
         <main className="app-main-content">
-          {/* Banner de Renovaciones Predictivas (solo en vistas de planes) */}
-          {upcomingRenewals.length > 0 && activeTab !== 'intake' && (
-            <RenewalBanner
-              renewals={upcomingRenewals}
-              onSelectClient={handleSelectClientFromAnywhere}
-            />
-          )}
-
-          {/* Tarjetas KPI Superiores (solo en vistas de planes) */}
-          {activeTab !== 'intake' && (
-            <KpiCards
-              summary={dashboardData?.summary}
-              onFilterStatus={(status) => {
-                setStatusFilter(status);
-                setActiveTab('table');
-              }}
-            />
-          )}
-
-          {/* Barra de Filtros para Vistas de Planes */}
-          {activeTab !== 'intake' && (
-            <FilterBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              clientFilter={clientFilter}
-              onClientFilterChange={setClientFilter}
-              monthFilter={monthFilter}
-              onMonthFilterChange={setMonthFilter}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
-              mdFilter={mdFilter}
-              onMdFilterChange={setMdFilter}
-              uniqueClients={dashboardData?.uniqueClients || []}
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-              onResetFilters={handleResetFilters}
-              resultCount={filteredPlans.length}
-              intakeCount={intakeResponses.length}
-            />
-          )}
-
           {/* VISTA 1: Atletas del Formulario (Respuestas / Intake) */}
           {activeTab === 'intake' && (
             <IntakeListView
@@ -321,35 +280,77 @@ export default function App() {
             />
           )}
 
-          {/* VISTA 2: Ficha Atleta + Data de Plan */}
+          {/* VISTA 2: Ficha Atleta + Visor de Plan Individual (Markdown / Google Drive) */}
           {activeTab === 'client' && (
-            <div className="dashboard-split-view">
-              <ClientDetail
-                uniqueClients={dashboardData?.uniqueClients || []}
-                selectedClient={selectedClient}
-                onSelectClient={setSelectedClient}
-                plans={dashboardData?.plans || []}
-                mdFiles={dashboardData?.mdFiles || []}
-                selectedFileId={selectedFileId}
-                onSelectFile={handleSelectFile}
-              />
+            <div className="client-dossier-view-wrapper">
+              <div className="dashboard-split-view">
+                <ClientDetail
+                  uniqueClients={dashboardData?.uniqueClients || []}
+                  selectedClient={selectedClient}
+                  onSelectClient={setSelectedClient}
+                  plans={dashboardData?.plans || []}
+                  mdFiles={dashboardData?.mdFiles || []}
+                  selectedFileId={selectedFileId}
+                  onSelectFile={handleSelectFile}
+                />
 
-              <PlanViewer
-                planInfo={planInfo}
-                planStruct={planStruct}
-                rawMarkdown={rawMarkdown}
-                isLoading={isLoadingPlan}
-                clientName={selectedClient}
-              />
+                <PlanViewer
+                  planInfo={planInfo}
+                  planStruct={planStruct}
+                  rawMarkdown={rawMarkdown}
+                  isLoading={isLoadingPlan}
+                  clientName={selectedClient}
+                />
+              </div>
             </div>
           )}
 
-          {/* VISTA 3: Tabla General de Planes */}
+          {/* VISTA 3: Control General de Planes en Drive (Tabla Maestra, Métricas y Renovaciones) */}
           {activeTab === 'table' && (
-            <PlansTable
-              plans={filteredPlans}
-              onSelectClient={handleSelectClientFromAnywhere}
-            />
+            <div className="plans-master-section">
+              {/* Banner de Renovaciones Predictivas */}
+              {upcomingRenewals.length > 0 && (
+                <RenewalBanner
+                  renewals={upcomingRenewals}
+                  onSelectClient={handleSelectClientFromAnywhere}
+                />
+              )}
+
+              {/* Tarjetas KPI Superiores de Planes */}
+              <KpiCards
+                summary={dashboardData?.summary}
+                onFilterStatus={(status) => {
+                  setStatusFilter(status);
+                  setActiveTab('table');
+                }}
+              />
+
+              {/* Barra de Filtros para Vistas de Planes */}
+              <FilterBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                clientFilter={clientFilter}
+                onClientFilterChange={setClientFilter}
+                monthFilter={monthFilter}
+                onMonthFilterChange={setMonthFilter}
+                statusFilter={statusFilter}
+                onStatusFilterChange={setStatusFilter}
+                mdFilter={mdFilter}
+                onMdFilterChange={setMdFilter}
+                uniqueClients={dashboardData?.uniqueClients || []}
+                activeTab={activeTab}
+                onTabChange={handleTabChange}
+                onResetFilters={handleResetFilters}
+                resultCount={filteredPlans.length}
+                intakeCount={intakeResponses.length}
+              />
+
+              {/* Tabla General de Planes */}
+              <PlansTable
+                plans={filteredPlans}
+                onSelectClient={handleSelectClientFromAnywhere}
+              />
+            </div>
           )}
         </main>
 

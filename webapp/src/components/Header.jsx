@@ -57,40 +57,49 @@ export default function Header({
           </div>
         </div>
 
-        {/* Lado derecho: Acciones rápidas */}
+        {/* Lado derecho: Acciones en el cintillo superior (Sincronización y Modo Claro/Oscuro) */}
         <div className="header-actions">
-          {/* Connection Status Pill */}
-          <div
-            className={`connection-pill ${isLiveGAS || isLiveSupabase ? 'live' : 'mock'}`}
-            onClick={onOpenSettings}
-            title="Haz clic para ver o configurar conexiones de Google Drive, Sheets y Supabase"
-          >
-            <Database size={14} />
-            <span className="status-label desktop-only">
-              {isLiveGAS ? 'Google Drive & Sheets' : isLiveSupabase ? 'Supabase' : 'Modo Local'}
-            </span>
-          </div>
-
+          {/* Botón de Sincronización en Vivo */}
           <button
-            className="action-btn icon-btn"
+            type="button"
+            className={`sync-header-btn ${isLiveGAS || isLiveSupabase ? 'live' : 'mock'}`}
             onClick={onRefresh}
             disabled={isLoading}
-            title="Recargar datos desde Google Drive y Sheets"
+            title={isLiveGAS ? 'Sincronizado con Google Drive & Sheets. Clic para recargar.' : isLiveSupabase ? 'Sincronizado con Supabase. Clic para recargar.' : 'Modo local. Clic para recargar.'}
           >
-            <RefreshCw size={16} className={isLoading ? 'spin' : ''} />
+            <span className={`sync-pulse-dot ${isLiveGAS || isLiveSupabase ? 'live' : 'mock'}`} />
+            <RefreshCw size={15} className={`sync-icon ${isLoading ? 'spin' : ''}`} />
+            <span className="sync-btn-label desktop-only">
+              {isLoading ? 'Recargando...' : isLiveGAS ? 'Google Sheets' : 'Sincronizar'}
+            </span>
           </button>
 
+          {/* Botón de Modo Claro / Oscuro */}
           <button
-            className="action-btn theme-btn"
+            type="button"
+            className="theme-toggle-header-btn"
             onClick={onToggleTheme}
-            aria-label="Cambiar tema"
-            title={isDarkMode ? 'Modo Día' : 'Modo Noche'}
+            aria-label="Cambiar tema claro u oscuro"
+            title={isDarkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
           >
-            {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-            <span className="desktop-only">{isDarkMode ? 'Día' : 'Noche'}</span>
+            {isDarkMode ? <Sun size={17} className="text-sun" /> : <Moon size={17} className="text-moon" />}
+            <span className="theme-btn-label desktop-only">
+              {isDarkMode ? 'Modo Día' : 'Modo Noche'}
+            </span>
           </button>
 
-          {/* User profile & logout */}
+          {/* Acceso a Configuración */}
+          <button
+            type="button"
+            className="header-config-btn"
+            onClick={onOpenSettings}
+            title="Configurar conexiones Google Drive, Sheets y Supabase"
+            aria-label="Configuración de conexiones"
+          >
+            <Settings size={16} />
+          </button>
+
+          {/* Perfil de Usuario en Escritorio */}
           {currentUser && (
             <div className="user-profile-widget desktop-only">
               <div className="user-avatar-pill">
@@ -98,6 +107,7 @@ export default function Header({
                 <span className="user-name-text">{currentUser.name}</span>
               </div>
               <button
+                type="button"
                 className="action-btn logout-btn"
                 onClick={onLogout}
                 title="Cerrar sesión"
