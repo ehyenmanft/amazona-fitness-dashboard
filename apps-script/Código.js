@@ -23,6 +23,12 @@ const CLIENTES_SHEET_NAME = 'Clientes';
 const MD_SHEET_NAME = 'MD_Files';
 
 /**
+ * ID de la Google Sheet con las respuestas del Formulario de Ingreso (Intake)
+ */
+const INTAKE_SPREADSHEET_ID = '11OU8BSOkeMVAOnJze2U2fmBE2VGYIqDFmeMgVS7MUig';
+const INTAKE_SHEET_NAME = 'Respuestas de formulario 2';
+
+/**
  * ID de la carpeta principal donde cargas los archivos .md.
  * Puede ser la carpeta principal o una subcarpeta.
  * La función también escanea subcarpetas internas.
@@ -41,6 +47,11 @@ function doGet(e) {
     if (e.parameter.action === 'data') {
       const data = getDashboardData();
       return ContentService.createTextOutput(JSON.stringify(data))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (e.parameter.action === 'intake') {
+      const intake = readIntakeFormResponses_();
+      return ContentService.createTextOutput(JSON.stringify(intake))
         .setMimeType(ContentService.MimeType.JSON);
     }
     if (e.parameter.action === 'markdown' && e.parameter.fileId) {
@@ -174,14 +185,18 @@ function getDashboardData() {
     ...mdFiles.map(m => m['Cliente'])
   ].filter(Boolean))).sort();
 
+  const intakeAthletes = readIntakeFormResponses_();
+
   return {
     summary: {
       appTitle: APP_TITLE,
       spreadsheetId: SPREADSHEET_ID,
+      intakeSpreadsheetId: INTAKE_SPREADSHEET_ID,
       generatedAt: new Date().toISOString(),
       clientsCount: uniqueClients.length,
       plansCount: plans.length,
       mdFilesCount: mdFiles.length,
+      intakeCount: intakeAthletes.length,
       pdfMdCount: plans.filter(p => p['Estado'] === 'PDF+MD').length,
       missingMdCount: plans.filter(p => p['Estado'] === 'PDF sin MD exacto').length,
       mdOnlyCount: plans.filter(p => p['Estado'] === 'MD solo').length
@@ -189,8 +204,50 @@ function getDashboardData() {
     plans: plans,
     clients: clients,
     mdFiles: mdFiles,
+    intakeAthletes: intakeAthletes,
     uniqueClients: uniqueClients
   };
+}
+
+
+/**
+ * Lee todas las respuestas del Formulario de Ingreso desde Google Sheets.
+ * Mapea las 46 columnas estructuradas para el dashboard.
+ */
+function readIntakeFormResponses_() {
+  try {
+    const ss = SpreadsheetApp.openById(INTAKE_SPREADSHEET_ID);
+    const sheet = ss.getSheetByName(INTAKE_SHEET_NAME) || ss.getSheets()[0];
+    if (!sheet) return [];
+
+    const values = sheet.getDataRange().getDisplayValues();
+    if (!values || values.length < 2) return [];
+
+    const headers = values[0].map(h => String(h).trim());
+
+    return values.slice(1).filter(row => row.some(c => String(c).trim() !== '')).map((row, rIdx) => {
+      const obj = { id: 'resp_' + (rIdx + 1), rowNumber: rIdx + 2 };
+      headers.forEach((h, i) => {
+        obj[h] = row[i] || '';
+      });
+
+      // Normalización para visualización óptima en el dashboard
+      obj.nombre = obj['Nombre Completo'] || '';
+      obj.email = obj['Correo electrónico'] || obj['Dirección de correo electrónico'] || '';
+      obj.telefono = obj['Número de Teléfono de contacto (Mensajería, Whatsapp...)'] || '';
+      obj.fecha = obj['Marca temporal'] || '';
+      obj.tipo_pago = obj['Método de Pago'] || '';
+      obj.comprobante_url = obj['Cargue su comprobante de pago'] || '';
+      obj.plan_interes = obj['  ¿Cuál es tu objetivo principal?  '] || '';
+      obj.idioma = 'ES';
+      obj.raw_headers = headers;
+
+      return obj;
+    });
+  } catch (err) {
+    Logger.log('Error leyendo respuestas intake de Google Sheets: ' + err.message);
+    return [];
+  }
 }
 
 

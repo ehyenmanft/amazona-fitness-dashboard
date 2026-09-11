@@ -47,9 +47,37 @@ export default function ApiConfigModal({ isOpen, onClose, onSave }) {
         </div>
 
         <div className="modal-body">
+          <div className="connection-status-card">
+            <div className="status-indicator-row">
+              <span className="live-dot-pulse"></span>
+              <strong>Google Sheets & Drive: Conectado en Vivo</strong>
+            </div>
+            <p className="modal-desc" style={{ marginTop: '6px', marginBottom: '0' }}>
+              El dashboard está sincronizando automáticamente desde tus dos hojas de cálculo oficiales:
+              <br />• <strong>Planes, Clientes & Archivos MD en Drive</strong> (ID: <code>1qURCA...</code>)
+              <br />• <strong>Respuestas de Formulario 2 (Intake 46 preguntas)</strong> (ID: <code>11OU8B...</code>)
+            </p>
+          </div>
+
+          <div className="input-group" style={{ marginTop: '16px' }}>
+            <label>URL de Google Apps Script Web App (Conexión Drive & Sheets):</label>
+            <input
+              type="url"
+              placeholder="https://script.google.com/macros/s/.../exec"
+              value={gasUrl}
+              onChange={e => setGasUrl(e.target.value)}
+            />
+            <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+              Por defecto utiliza el endpoint oficial desplegado en tu cuenta.
+            </small>
+          </div>
+
+          <div className="divider-line" style={{ margin: '18px 0', borderTop: '1px solid var(--border-color)' }}></div>
+
           <p className="modal-desc">
-            Configura la conexión con tu proyecto de <strong>Supabase</strong> ("Amazona Fitness")
-            para almacenar y leer las respuestas de tus atletas en tiempo real.
+            <strong>Supabase ("Amazona Fitness") - Opcional:</strong>
+            <br />
+            Cuando desees activar Supabase, ingresa tus credenciales aquí. Mientras tanto, todos los datos se leen directamente de Google Sheets y Google Drive.
           </p>
 
           <div className="input-group">
@@ -72,36 +100,22 @@ export default function ApiConfigModal({ isOpen, onClose, onSave }) {
             />
           </div>
 
-          <div className="input-group">
-            <label>URL de Google Apps Script Web App (Opcional):</label>
-            <input
-              type="url"
-              placeholder="https://script.google.com/macros/s/.../exec"
-              value={gasUrl}
-              onChange={e => setGasUrl(e.target.value)}
-            />
-          </div>
-
           <div className="modal-instructions">
             <div className="instruction-head">
               <HelpCircle size={14} />
-              <strong>Pasos para configurar Supabase:</strong>
+              <strong>¿Cómo activar Supabase más adelante?</strong>
             </div>
             <ol>
-              <li>Entra en tu consola de <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer">Supabase</a>.</li>
-              <li>Crea el proyecto <strong>Amazona Fitness</strong> (o entra si ya existe).</li>
-              <li>Ve a <strong>Project Settings &gt; API</strong> y copia la <em>Project URL</em> y <em>anon public key</em>.</li>
-              <li>En el <strong>SQL Editor</strong> de Supabase, ejecuta el script <code>supabase/schema.sql</code> que hemos incluido en el repositorio.</li>
+              <li>Entra en tu consola de <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer">Supabase</a> y crea el proyecto <strong>Amazona Fitness</strong>.</li>
+              <li>Ejecuta el archivo <code>supabase/schema.sql</code> en el SQL Editor.</li>
+              <li>Pega la Project URL y la anon key aquí.</li>
             </ol>
-            <p className="instruction-note">
-              Si dejas estos campos vacíos, el dashboard seguirá funcionando fluidamente con datos de demostración predefinidos.
-            </p>
           </div>
         </div>
 
         <div className="modal-footer">
           <button className="modal-btn ghost" onClick={handleClear}>
-            Restablecer / Modo Demo
+            Restablecer Conexión Oficial
           </button>
           <button className="modal-btn primary" onClick={handleSave}>
             {isSaved ? (
@@ -110,7 +124,7 @@ export default function ApiConfigModal({ isOpen, onClose, onSave }) {
                 <span>¡Guardado!</span>
               </>
             ) : (
-              <span>Guardar Conexión</span>
+              <span>Guardar Configuración</span>
             )}
           </button>
         </div>

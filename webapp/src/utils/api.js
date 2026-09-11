@@ -1,9 +1,10 @@
 import { MOCK_DASHBOARD_DATA, SAMPLE_MARKDOWN_PLAN_1 } from '../data/mockData';
 
 const LOCAL_STORAGE_URL_KEY = 'amazona_gas_webapp_url';
+export const DEFAULT_GAS_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbxSu99PSOWYxuH44sUwIDbtsNdnIIukpFOmEHYWB-RFwTOx423_nP5AIeNwDLRbqjZyhQ/exec';
 
 export function getGasWebappUrl() {
-  return localStorage.getItem(LOCAL_STORAGE_URL_KEY) || import.meta.env.VITE_GAS_WEBAPP_URL || '';
+  return localStorage.getItem(LOCAL_STORAGE_URL_KEY) || import.meta.env.VITE_GAS_WEBAPP_URL || DEFAULT_GAS_WEBAPP_URL;
 }
 
 export function setGasWebappUrl(url) {

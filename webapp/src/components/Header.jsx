@@ -4,6 +4,7 @@ import { Sun, Moon, Database, RefreshCw, Zap, LogOut, User } from 'lucide-react'
 export default function Header({
   isDarkMode,
   onToggleTheme,
+  isLiveGAS,
   isLiveSupabase,
   onOpenSettings,
   onRefresh,
@@ -21,7 +22,7 @@ export default function Header({
           <span className="ribbon-dot">•</span>
           <span>Rutinas de Entrenamiento</span>
           <span className="ribbon-dot">•</span>
-          <span>Atletas & Intake Supabase</span>
+          <span>Google Drive & Sheets en Vivo</span>
         </div>
       </div>
 
@@ -38,15 +39,15 @@ export default function Header({
         </div>
 
         <div className="header-actions">
-          {/* Supabase Status Pill */}
+          {/* Connection Status Pill */}
           <div
-            className={`connection-pill ${isLiveSupabase ? 'live' : 'mock'}`}
+            className={`connection-pill ${isLiveGAS || isLiveSupabase ? 'live' : 'mock'}`}
             onClick={onOpenSettings}
-            title="Haz clic para configurar Supabase o Google Apps Script"
+            title="Haz clic para ver o configurar conexiones de Google Drive, Sheets y Supabase"
           >
             <Database size={14} />
             <span className="status-label">
-              {isLiveSupabase ? 'Supabase Conectado' : 'Modo Demo (Local)'}
+              {isLiveGAS ? 'Google Drive & Sheets en Vivo' : isLiveSupabase ? 'Supabase Conectado' : 'Modo Local'}
             </span>
           </div>
 

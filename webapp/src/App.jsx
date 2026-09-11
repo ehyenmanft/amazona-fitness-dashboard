@@ -66,7 +66,7 @@ export default function App() {
   const loadAllData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // 1. Cargar datos de Planes y Clientes (GAS / Mock)
+      // 1. Cargar datos de Planes, Clientes, MDs de Drive y Formulario desde Google Sheets
       const { data: gasData, isLive: gasLive } = await fetchDashboardData();
       setDashboardData(gasData);
       setIsLiveGAS(gasLive);
@@ -75,10 +75,15 @@ export default function App() {
         setSelectedClient(gasData.uniqueClients[0]);
       }
 
-      // 2. Cargar datos de Formulario e Intake (Supabase / Mock)
-      const { data: formResp, isLive: sbLive } = await fetchFormResponsesFromSupabase();
-      setIntakeResponses(formResp);
-      setIsLiveSupabase(sbLive);
+      // 2. Cargar respuestas de Formulario desde Google Sheets (Respuestas de formulario 2)
+      if (gasData.intakeAthletes && gasData.intakeAthletes.length > 0) {
+        setIntakeResponses(gasData.intakeAthletes);
+      } else {
+        // Fallback si Google Sheets está en caché o si el usuario conecta Supabase
+        const { data: formResp, isLive: sbLive } = await fetchFormResponsesFromSupabase();
+        setIntakeResponses(formResp);
+        setIsLiveSupabase(sbLive);
+      }
     } catch (err) {
       console.error('Error general cargando datos:', err);
     } finally {
@@ -203,6 +208,7 @@ export default function App() {
       <Header
         isDarkMode={isDarkMode}
         onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+        isLiveGAS={isLiveGAS}
         isLiveSupabase={isLiveSupabase}
         onOpenSettings={() => setIsConfigOpen(true)}
         onRefresh={loadAllData}
