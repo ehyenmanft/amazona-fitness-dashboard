@@ -36,7 +36,25 @@ const MD_CACHE_SECONDS = 300;
 /**
  * Entrada principal de la web app.
  */
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter) {
+    if (e.parameter.action === 'data') {
+      const data = getDashboardData();
+      return ContentService.createTextOutput(JSON.stringify(data))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (e.parameter.action === 'markdown' && e.parameter.fileId) {
+      try {
+        const md = getMarkdownContent(e.parameter.fileId);
+        return ContentService.createTextOutput(JSON.stringify(md))
+          .setMimeType(ContentService.MimeType.JSON);
+      } catch (err) {
+        return ContentService.createTextOutput(JSON.stringify({ error: err.message }))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+  }
+
   return HtmlService
     .createTemplateFromFile('Index')
     .evaluate()

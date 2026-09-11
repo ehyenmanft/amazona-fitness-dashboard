@@ -1,0 +1,923 @@
+<script>
+let PLANS = [], CLIENTS = [], MDFILES = [], UNIQUE_CLIENTS = [];
+let CURRENT_PLAN_TEXT = '', CURRENT_PLAN_STRUCT = null;
+let LAST_AUTO_LOADED_CLIENT = '', LAST_AUTO_LOADED_FILEID = '', CURRENT_DRIVE_TAB = 'pdf';
+
+const SECTION_ORDER = ['perfil', 'nutricion', 'suplementacion', 'entrenamiento', 'recomendaciones', 'checklist', 'otros'];
+const SECTION_LABELS = {
+  perfil: 'Perfil del cliente',
+  nutricion: 'Nutrición',
+  suplementacion: 'Suplementación',
+  entrenamiento: 'Entrenamiento',
+  recomendaciones: 'Recomendaciones',
+  checklist: 'Checklist / Seguimiento',
+  otros: 'Otros datos'
+};
+
+function esc(s) {
+  return (s ?? '').toString().replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
+}
+
+function normalize(s) {
+  return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+function badge(status) {
+  if (status === 'PDF+MD') return '<span class="badge ok">PDF+Data</span>';
+  if (status === 'PDF sin MD exacto') return '<span class="badge bad">PDF sin Data exacta</span>';
+  if (status === 'MD solo') return '<span class="badge mdonly">Data sola</span>';
+  return '<span class="badge none">Sin plan</span>';
+}
+
+function linkify(urls, label) {
+  if (!urls) return '';
+  return urls.split(';')
+    .map(u => u.trim())
+    .filter(Boolean)
+    .map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(label || 'Abrir')}${i ? ' ' + (i + 1) : ''}</a>`)
+    .join('<br>');
+}
+
+function init(data) {
+  PLANS = data.plans || [];
+  CLIENTS = data.clients || [];
+  MDFILES = data.mdFiles || [];
+  UNIQUE_CLIENTS = data.uniqueClients || [];
+
+  document.getElementById('kClients').textContent = data.summary.clientsCount;
+  document.getElementById('kPlans').textContent = data.summary.plansCount;
+  document.getElementById('kMds').textContent = data.summary.mdFilesCount;
+  document.getElementById('kOk').textContent = data.summary.pdfMdCount;
+  document.getElementById('kMissing').textContent = data.summary.missingMdCount;
+
+  const clientFilter = document.getElementById('clientFilter');
+  const clientPicker = document.getElementById('clientPicker');
+
+  UNIQUE_CLIENTS.forEach(c => {
+    const o = document.createElement('option');
+    o.value = c;
+    o.textContent = c;
+    clientFilter.appendChild(o.cloneNode(true));
+    clientPicker.appendChild(o);
+  });
+
+  render();
+  renderRenewalBanner();
+}
+
+function parseDateFlexible(value) {
+  if (!value) return null;
+  const parts = String(value).split(';').map(x => x.trim()).filter(Boolean);
+  for (const raw of parts) {
+    let s = raw;
+    let m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  }
+  return null;
+}
+
+function formatDateES(date) {
+  if (!date || isNaN(date)) return '—';
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yy = date.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
+
+function addDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function diffDays(a, b) {
+  return Math.round((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function getClientPlanSummary(client) {
+  const rows = PLANS.filter(p => normalize(p['Cliente']) === normalize(client));
+  const dateItems = [];
+
+  rows.forEach(r => {
+    const raw = r['Fecha carga PDF'];
+    if (!raw) return;
+    String(raw).split(';').map(x => x.trim()).filter(Boolean).forEach(piece => {
+      const d = parseDateFlexible(piece);
+      if (d && !isNaN(d)) {
+        dateItems.push({
+          date: d,
+          label: formatDateES(d),
+          month: r['Mes plan'] || '',
+          state: r['Estado'] || ''
+        });
+      }
+    });
+  });
+
+  if (!dateItems.length) {
+    const mdRows = MDFILES.filter(m => normalize(m['Cliente']) === normalize(client));
+    const monthMap = { Enero: 0, Febrero: 1, Marzo: 2, Abril: 3, Mayo: 4, Junio: 5, Julio: 6, Agosto: 7, Septiembre: 8, Octubre: 9, Noviembre: 10, Diciembre: 11 };
+    mdRows.forEach(m => {
+      const mes = m['Mes plan'];
+      if (monthMap[mes] !== undefined) {
+        const d = new Date(2026, monthMap[mes], 1);
+        dateItems.push({ date: d, label: `${mes} 2026`, month: mes, state: 'Data' });
+      }
+    });
+  }
+
+  dateItems.sort((a, b) => a.date - b.date);
+
+  const unique = [];
+  const seen = new Set();
+  dateItems.forEach(item => {
+    const key = item.label + '-' + item.month;
+    if (!seen.has(key)) {
+      unique.push(item);
+      seen.add(key);
+    }
+  });
+
+  let frequencyText = 'Sin frecuencia calculable';
+  let renewalText = 'Sin fecha estimada';
+
+  if (unique.length >= 2) {
+    const intervals = [];
+    for (let i = 1; i < unique.length; i++) {
+      const days = diffDays(unique[i - 1].date, unique[i].date);
+      if (days > 0) intervals.push(days);
+    }
+    if (intervals.length) {
+      const avg = Math.round(intervals.reduce((a, b) => a + b, 0) / intervals.length);
+      frequencyText = intervals.length === 1 ? `${intervals[0]} días` : `${avg} días promedio (${intervals.join(', ')} días)`;
+      renewalText = formatDateES(addDays(unique[unique.length - 1].date, avg));
+    }
+  } else if (unique.length === 1) {
+    frequencyText = '30 días estimados';
+    renewalText = formatDateES(addDays(unique[0].date, 30));
+  }
+
+  return { dates: unique, frequencyText, renewalText };
+}
+
+function renderClientSummary(client) {
+  const box = document.getElementById('clientSummary');
+  if (!client) {
+    box.classList.add('hidden');
+    return;
+  }
+
+  const summary = getClientPlanSummary(client);
+  document.getElementById('clientSummaryName').textContent = client;
+
+  if (summary.dates.length) {
+    document.getElementById('clientPlanDates').innerHTML = summary.dates.map(d => {
+      const txt = d.month ? `${d.month}: ${d.label}` : d.label;
+      return `<span class="client-date-chip">${esc(txt)}</span>`;
+    }).join('');
+  } else {
+    document.getElementById('clientPlanDates').textContent = 'Sin fecha registrada';
+  }
+
+  document.getElementById('clientFrequency').textContent = summary.frequencyText;
+  document.getElementById('clientRenewal').textContent = summary.renewalText;
+  box.classList.remove('hidden');
+}
+
+function getClientPlanRows(client) {
+  return PLANS.filter(p => normalize(p['Cliente']) === normalize(client));
+}
+
+function getClientMdRows(client) {
+  return MDFILES.filter(m => normalize(m['Cliente']) === normalize(client));
+}
+
+function monthRank(month) {
+  const order = {
+    'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4, 'mayo': 5, 'junio': 6,
+    'julio': 7, 'agosto': 8, 'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12,
+    'sin mes': 0
+  };
+  return order[normalize(month)] || 0;
+}
+
+function versionRank(name) {
+  const m = String(name || '').match(/(?:^|[_\s-])v(\d+)/i);
+  return m ? Number(m[1]) : 0;
+}
+
+function maxDateFromText(value) {
+  if (!value) return null;
+  const dates = String(value).split(';')
+    .map(x => parseDateFlexible(x.trim()))
+    .filter(d => d && !isNaN(d));
+  if (!dates.length) return null;
+  dates.sort((a, b) => b - a);
+  return dates[0];
+}
+
+function latestDateForClientMonth(client, month) {
+  const rows = getClientPlanRows(client).filter(r => normalize(r['Mes plan']) === normalize(month));
+  const dates = rows.map(r => maxDateFromText(r['Fecha carga PDF'])).filter(Boolean);
+  if (!dates.length) return null;
+  dates.sort((a, b) => b - a);
+  return dates[0];
+}
+
+function sortMdRowsMostRecent(client, rows) {
+  return [...rows].sort((a, b) => {
+    const ad = maxDateFromText(a['Fecha carga MD'] || a['Fecha MD'] || a['createdTime'] || a['modifiedTime']) || latestDateForClientMonth(client, a['Mes plan']);
+    const bd = maxDateFromText(b['Fecha carga MD'] || b['Fecha MD'] || b['createdTime'] || b['modifiedTime']) || latestDateForClientMonth(client, b['Mes plan']);
+    if (ad && bd && ad.getTime() !== bd.getTime()) return bd - ad;
+    if (ad && !bd) return -1;
+    if (!ad && bd) return 1;
+    const mr = monthRank(b['Mes plan']) - monthRank(a['Mes plan']);
+    if (mr !== 0) return mr;
+    return versionRank(b['Archivo MD']) - versionRank(a['Archivo MD']);
+  });
+}
+
+function renderClientDriveLinks(client) {
+  const panel = document.getElementById('clientDrivePanel');
+  const links = document.getElementById('clientDriveLinks');
+  const count = document.getElementById('clientDriveCount');
+
+  if (!client) {
+    panel.classList.add('hidden');
+    links.innerHTML = 'Selecciona un cliente para ver sus enlaces.';
+    count.textContent = '—';
+    return;
+  }
+
+  const planRows = getClientPlanRows(client);
+  const mdRows = sortMdRowsMostRecent(client, getClientMdRows(client));
+
+  const pdfLinks = [];
+  planRows.forEach(r => {
+    const urls = String(r['URL PDF'] || '').split(';').map(u => u.trim()).filter(Boolean);
+    urls.forEach((url, idx) => {
+      pdfLinks.push({
+        url,
+        title: r['Archivo PDF'] || ('Plan PDF ' + (idx + 1)),
+        meta: [r['Mes plan'], r['Fecha carga PDF'], r['Estado']].filter(Boolean).join(' · ')
+      });
+    });
+  });
+
+  const dataLinks = [];
+  mdRows.forEach(m => {
+    const url = m['MD URL'] || (m['MD file ID'] ? 'https://drive.google.com/file/d/' + m['MD file ID'] : '');
+    if (url) {
+      dataLinks.push({
+        url,
+        title: m['Archivo MD'] || 'Data de Plan',
+        meta: [m['Mes plan'], m['Fecha carga MD'] || m['Fecha MD'] || ''].filter(Boolean).join(' · ')
+      });
+    }
+  });
+
+  const activeLinks = CURRENT_DRIVE_TAB === 'pdf' ? pdfLinks : dataLinks;
+  document.querySelectorAll('.drive-tab').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.driveTab === CURRENT_DRIVE_TAB);
+  });
+
+  count.textContent = `${pdfLinks.length} PDF · ${dataLinks.length} Data`;
+  if (!activeLinks.length) {
+    links.innerHTML = `<div class="small">No hay enlaces ${CURRENT_DRIVE_TAB === 'pdf' ? 'PDF' : 'de Data'} registrados para este cliente.</div>`;
+  } else {
+    links.innerHTML = activeLinks.map(item => `<div class="drive-link-card">
+      <div class="drive-link-title">${esc(item.title)}</div>
+      <div class="drive-link-meta">${esc(item.meta || 'Enlace Drive')}</div>
+      <a class="drive-link-action" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">Abrir en Drive</a>
+    </div>`).join('');
+  }
+
+  panel.classList.remove('hidden');
+}
+
+function currentFilteredPlans() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const cf = document.getElementById('clientFilter').value;
+  const mf = document.getElementById('monthFilter').value;
+  const sf = document.getElementById('statusFilter').value;
+  const md = document.getElementById('mdFilter').value;
+  return PLANS.filter(r => {
+    const blob = Object.values(r).join(' ').toLowerCase();
+    return (!q || blob.includes(q)) && (!cf || r['Cliente'] === cf) && (!mf || r['Mes plan'] === mf) && (!sf || r['Estado'] === sf) && (!md || r['MD existe'] === md);
+  });
+}
+
+function renderPlans() {
+  const rows = currentFilteredPlans();
+  document.getElementById('resultCount').textContent = `${rows.length} planes mostrados · ${MDFILES.length} archivos de Data de Plan indexados`;
+  const tbody = document.querySelector('#plansTable tbody');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="loading">Sin resultados</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td><strong>${esc(r['Cliente'])}</strong></td>
+    <td>${esc(r['Mes plan'])}</td>
+    <td>${esc(r['Fecha carga PDF'])}</td>
+    <td>${esc(r['PDF existe'])}<br>${linkify(r['URL PDF'], 'Abrir PDF')}</td>
+    <td>${esc(r['MD existe'])}</td>
+    <td>${badge(r['Estado'])}</td>
+    <td>${esc(r['Archivo PDF'])}</td>
+    <td>${esc(r['Archivo MD'])}</td>
+    <td>${esc(r['Observación'])}</td>
+  </tr>`).join('');
+}
+
+function renderMdList() {
+  const selected = document.getElementById('clientPicker').value;
+  const list = document.getElementById('mdList');
+
+  renderClientSummary(selected);
+  renderClientDriveLinks(selected);
+
+  if (!selected) {
+    list.innerHTML = 'Selecciona un cliente para ver su Data de Plan.';
+    LAST_AUTO_LOADED_CLIENT = '';
+    LAST_AUTO_LOADED_FILEID = '';
+    return;
+  }
+
+  const items = sortMdRowsMostRecent(selected, MDFILES.filter(m => m['Cliente'] === selected || normalize(m['Cliente']) === normalize(selected)));
+  if (!items.length) {
+    list.innerHTML = '<div class="small">No hay Data de Plan indexada para este cliente.</div>';
+    document.getElementById('viewerTitle').textContent = 'Vista Data de Plan';
+    document.getElementById('viewerMeta').textContent = 'No hay Data de Plan disponible para este cliente.';
+    document.getElementById('viewerLinks').innerHTML = '';
+    document.getElementById('dataNav').innerHTML = '';
+    document.getElementById('mdContent').innerHTML = '<div class="empty-state">No hay Data de Plan indexada para este cliente.</div>';
+    LAST_AUTO_LOADED_CLIENT = selected;
+    LAST_AUTO_LOADED_FILEID = '';
+    return;
+  }
+
+  list.innerHTML = items.map((m, i) => `<div class="md-item" data-fileid="${esc(m['MD file ID'])}" data-index="${i}">
+    <strong>${esc(m['Mes plan'])}${i === 0 ? ' · Más reciente' : ''}</strong><br>${esc(m['Archivo MD'])}<br><span class="small">${esc(m['MD file ID'])}</span>
+  </div>`).join('');
+
+  const nodes = [...document.querySelectorAll('.md-item')];
+  nodes.forEach(el => el.addEventListener('click', () => loadPlanData(el.dataset.fileid, el)));
+
+  const latestNode = nodes[0];
+  const latestId = latestNode ? latestNode.dataset.fileid : '';
+  if (latestNode && (LAST_AUTO_LOADED_CLIENT !== selected || LAST_AUTO_LOADED_FILEID !== latestId)) {
+    loadPlanData(latestId, latestNode);
+  }
+}
+
+function getDataFileMetaById(fileId) {
+  const item = (MDFILES || []).find(m => String(m['MD file ID'] || '').trim() === String(fileId || '').trim());
+  return item || {};
+}
+
+function formatDataViewerDate(value) {
+  if (!value) return 'Sin fecha registrada';
+  const d = new Date(value);
+  if (!isNaN(d)) {
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = d.getFullYear();
+    return `${dd}/${mm}/${yy}`;
+  }
+  const parsed = parseDateFlexible(value);
+  if (parsed && !isNaN(parsed)) {
+    const dd = String(parsed.getDate()).padStart(2, '0');
+    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+    const yy = parsed.getFullYear();
+    return `${dd}/${mm}/${yy}`;
+  }
+  return String(value);
+}
+
+function getSelectedClientName() {
+  const picker = document.getElementById('clientPicker');
+  const picked = picker ? picker.value : '';
+  return picked || LAST_AUTO_LOADED_CLIENT || 'Cliente';
+}
+
+function buildViewerHeaderInfo(fileId, result) {
+  const fileMeta = getDataFileMetaById(fileId);
+  const client = fileMeta['Cliente'] || getSelectedClientName();
+  const month = fileMeta['Mes plan'] || '';
+  const updated = result && result.updatedAt ? result.updatedAt : '';
+  const dateText = formatDataViewerDate(updated);
+  const fileName = result && result.name ? result.name : (fileMeta['Archivo MD'] || '');
+
+  return {
+    title: client,
+    meta: `${month ? 'Plan: ' + month + ' · ' : ''}Fecha Data de Plan: ${dateText}${fileName ? ' · Archivo fuente: ' + fileName : ''}`
+  };
+}
+
+function loadPlanData(fileId, el) {
+  LAST_AUTO_LOADED_FILEID = fileId;
+  LAST_AUTO_LOADED_CLIENT = document.getElementById('clientPicker').value || LAST_AUTO_LOADED_CLIENT;
+  document.querySelectorAll('.md-item').forEach(x => x.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  document.getElementById('viewerTitle').textContent = 'Cargando Data de Plan...';
+  document.getElementById('viewerMeta').textContent = fileId;
+  document.getElementById('viewerLinks').innerHTML = '';
+  document.getElementById('dataNav').innerHTML = '';
+  document.getElementById('mdContent').innerHTML = '<div class="loading">Leyendo archivo desde Drive...</div>';
+
+  google.script.run
+    .withSuccessHandler(res => {
+      const viewerInfo = buildViewerHeaderInfo(fileId, res);
+      document.getElementById('viewerTitle').textContent = viewerInfo.title;
+      document.getElementById('viewerMeta').textContent = viewerInfo.meta;
+      document.getElementById('viewerLinks').innerHTML = `<a href="${esc(res.url)}" target="_blank" rel="noopener noreferrer">Abrir archivo fuente en Drive</a>`;
+      CURRENT_PLAN_TEXT = res.content || '';
+      CURRENT_PLAN_STRUCT = parsePlanData(CURRENT_PLAN_TEXT);
+      renderPlanData(CURRENT_PLAN_STRUCT);
+    })
+    .withFailureHandler(err => {
+      document.getElementById('viewerTitle').textContent = 'Error al cargar Data de Plan';
+      document.getElementById('viewerMeta').textContent = fileId;
+      document.getElementById('mdContent').innerHTML = '<div class="loading">Error: ' + esc(err.message) + '</div>';
+    })
+    .getMarkdownContent(fileId);
+}
+
+function categorizeHeading(text) {
+  const t = normalize(text);
+  if (/perfil|datos.*cliente|cliente|evaluacion|diagnostico|objetivo|medidas|antropometr/.test(t)) return 'perfil';
+  if (/nutricion|alimentacion|comida|menu|macros|caloria|proteina|carbohidrato|grasa|hidratacion|desayuno|almuerzo|cena|merienda/.test(t)) return 'nutricion';
+  if (/suplement|creatina|proteina whey|omega|magnesio|vitamina|glutamina|bcaa|pre entreno|preentreno/.test(t)) return 'suplementacion';
+  if (/entrenamiento|rutina|ejercicio|series|repeticiones|cardio|pierna|gluteo|pecho|espalda|hombro|biceps|triceps|pesas|gym|gimnasio/.test(t)) return 'entrenamiento';
+  if (/recomendacion|habito|descanso|sueno|estres|indicacion|nota|observacion|seguimiento|ajuste/.test(t)) return 'recomendaciones';
+  if (/checklist|lista|control|diario|semanal|cumplimiento|monitoreo/.test(t)) return 'checklist';
+  return 'otros';
+}
+
+function parsePlanData(md) {
+  const lines = (md || '').replace(/\r\n/g, '\n').split('\n');
+  const sections = {};
+  SECTION_ORDER.forEach(k => sections[k] = { key: k, label: SECTION_LABELS[k], blocks: [], raw: [] });
+  let current = 'otros';
+  let currentTitle = 'Inicio';
+  let buffer = [];
+
+  function flushParagraph() {
+    if (buffer.length) {
+      const text = buffer.join('\n').trim();
+      if (text) addBlock(current, { type: 'text', title: currentTitle, content: text });
+      buffer = [];
+    }
+  }
+  function addBlock(sec, block) { sections[sec].blocks.push(block); }
+  function isTableLine(line) { return /^\s*\|.*\|\s*$/.test(line); }
+  function isSeparator(line) { return /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line); }
+
+  function parseTable(start) {
+    const rows = [];
+    let i = start;
+    while (i < lines.length && isTableLine(lines[i])) {
+      if (!isSeparator(lines[i])) {
+        let cells = lines[i].trim();
+        if (cells.startsWith('|')) cells = cells.slice(1);
+        if (cells.endsWith('|')) cells = cells.slice(0, -1);
+        rows.push(cells.split('|').map(c => c.trim()));
+      }
+      i++;
+    }
+    const headers = rows.shift() || [];
+    return { table: { headers, rows }, next: i };
+  }
+
+  function parseList(start) {
+    const items = [];
+    let i = start;
+    while (i < lines.length && /^\s*(?:[-*•]|\d+\.)\s+/.test(lines[i])) {
+      items.push(lines[i].replace(/^\s*(?:[-*•]|\d+\.)\s+/, '').trim());
+      i++;
+    }
+    return { items, next: i };
+  }
+
+  function colonPairs(text) {
+    const pairs = [];
+    text.split('\n').forEach(line => {
+      const m = line.match(/^\s*([^:]{2,60}):\s*(.+?)\s*$/);
+      if (m) pairs.push({ key: m[1].trim(), value: m[2].trim() });
+    });
+    return pairs;
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const h = line.match(/^\s{0,3}(#{1,6})\s+(.+?)\s*$/);
+    if (h) {
+      flushParagraph();
+      currentTitle = h[2].replace(/[*_`]/g, '').trim();
+      current = categorizeHeading(currentTitle);
+      sections[current].raw.push(line);
+      addBlock(current, { type: 'heading', title: currentTitle, level: h[1].length });
+      continue;
+    }
+    if (isTableLine(line)) {
+      flushParagraph();
+      const parsed = parseTable(i);
+      addBlock(current, { type: 'table', title: currentTitle, headers: parsed.table.headers, rows: parsed.table.rows });
+      i = parsed.next - 1;
+      continue;
+    }
+    if (/^\s*(?:[-*•]|\d+\.)\s+/.test(line)) {
+      flushParagraph();
+      const parsed = parseList(i);
+      addBlock(current, { type: 'list', title: currentTitle, items: parsed.items });
+      i = parsed.next - 1;
+      continue;
+    }
+    if (line.trim() === '') {
+      flushParagraph();
+      continue;
+    }
+    buffer.push(line);
+  }
+  flushParagraph();
+
+  Object.values(sections).forEach(sec => {
+    sec.blocks = sec.blocks.map(b => {
+      if (b.type === 'text') {
+        const pairs = colonPairs(b.content);
+        if (pairs.length >= 2) return { ...b, type: 'kv', pairs };
+      }
+      return b;
+    });
+  });
+  return sections;
+}
+
+function renderPlanData(struct) {
+  const nav = document.getElementById('dataNav');
+  const content = document.getElementById('mdContent');
+  const available = SECTION_ORDER.filter(k => struct[k] && struct[k].blocks.length);
+
+  if (!available.length) {
+    content.innerHTML = '<div class="empty-state">La Data de Plan no contiene bloques reconocibles.</div>';
+    nav.innerHTML = '';
+    return;
+  }
+
+  nav.innerHTML = available.map(k => `<button class="nav-pill" data-target="sec-${k}">${SECTION_LABELS[k]}</button>`).join('');
+  content.innerHTML = available.map(k => renderSection(struct[k])).join('') + renderRawSection();
+
+  document.querySelectorAll('.nav-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const el = document.getElementById(btn.dataset.target);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  document.querySelectorAll('.section-head').forEach(head => {
+    head.addEventListener('click', () => head.parentElement.classList.toggle('collapsed'));
+  });
+
+  document.getElementById('insideSearch').value = '';
+}
+
+function renderSection(sec) {
+  const useful = sec.blocks.filter(b => b.type !== 'heading');
+  const count = useful.length;
+  return `<article class="section-card sec-${sec.key}" id="sec-${sec.key}">
+    <div class="section-head">
+      <h2>${esc(sec.label)}</h2>
+      <span class="section-count">${count} bloque${count === 1 ? '' : 's'}</span>
+    </div>
+    <div class="section-body">
+      ${useful.length ? useful.map(renderBlock).join('') : '<div class="small">Sin contenido clasificado en esta sección.</div>'}
+    </div>
+  </article>`;
+}
+
+function renderBlock(block) {
+  if (block.type === 'table') {
+    return `<div>
+      <h3 class="mini-title">${esc(block.title || 'Tabla')}</h3>
+      <div class="data-table-wrap">
+        <table class="data-table">
+          <thead><tr>${(block.headers || []).map(h => `<th>${formatInline(h)}</th>`).join('')}</tr></thead>
+          <tbody>${(block.rows || []).map(r => `<tr>${r.map(c => `<td>${formatInline(c)}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+  if (block.type === 'kv') {
+    return `<div>
+      <h3 class="mini-title">${esc(block.title || 'Datos')}</h3>
+      <div class="info-grid">
+        ${block.pairs.map(p => `<div class="kv"><div class="k">${formatInline(p.key)}</div><div class="v">${formatInline(p.value)}</div></div>`).join('')}
+      </div>
+    </div>`;
+  }
+  if (block.type === 'list') {
+    return `<div class="list-box">
+      <h3 class="mini-title">${esc(block.title || 'Lista')}</h3>
+      <ul>${block.items.map(it => `<li>${formatInline(it)}</li>`).join('')}</ul>
+    </div>`;
+  }
+  if (block.type === 'text') {
+    return `<div class="paragraph-box">${formatInline(block.content)}</div>`;
+  }
+  return '';
+}
+
+function formatInline(s) {
+  let x = esc(s || '');
+  x = x.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  x = x.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  x = x.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  x = x.replace(/\n/g, '<br>');
+  return x;
+}
+
+function renderRawSection() {
+  return `<article class="section-card sec-otros collapsed" id="sec-raw">
+    <div class="section-head">
+      <h2>Data original</h2>
+      <span class="section-count">clic para ver/ocultar</span>
+    </div>
+    <div class="section-body">
+      <div class="raw-content">${esc(CURRENT_PLAN_TEXT)}</div>
+    </div>
+  </article>`;
+}
+
+function filterInsidePlan() {
+  const q = normalize(document.getElementById('insideSearch').value.trim());
+  if (!CURRENT_PLAN_STRUCT) return;
+  document.querySelectorAll('.section-card').forEach(card => {
+    const txt = normalize(card.innerText);
+    card.style.display = (!q || txt.includes(q)) ? 'block' : 'none';
+  });
+}
+
+function render() {
+  renderPlans();
+  renderMdList();
+}
+
+['search', 'clientFilter', 'monthFilter', 'statusFilter', 'mdFilter'].forEach(id => {
+  document.getElementById(id).addEventListener('input', render);
+});
+
+document.getElementById('insideSearch').addEventListener('input', filterInsidePlan);
+document.getElementById('clientPicker').addEventListener('input', renderMdList);
+
+document.getElementById('expandAll').addEventListener('click', () => {
+  const collapsed = [...document.querySelectorAll('.section-card.collapsed')];
+  if (collapsed.length) {
+    collapsed.forEach(c => c.classList.remove('collapsed'));
+    document.getElementById('expandAll').textContent = 'Contraer todo';
+  } else {
+    document.querySelectorAll('.section-card').forEach(c => c.classList.add('collapsed'));
+    document.getElementById('expandAll').textContent = 'Expandir todo';
+  }
+});
+
+document.querySelectorAll('.drive-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    CURRENT_DRIVE_TAB = btn.dataset.driveTab || 'pdf';
+    renderClientDriveLinks(document.getElementById('clientPicker').value);
+  });
+});
+
+document.getElementById('resetFilters').addEventListener('click', () => {
+  ['search', 'clientFilter', 'monthFilter', 'statusFilter', 'mdFilter'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  render();
+  renderRenewalBanner();
+});
+
+document.getElementById('tabMd').addEventListener('click', () => {
+  document.getElementById('tabMd').classList.add('active');
+  document.getElementById('tabPlans').classList.remove('active');
+  document.getElementById('mdView').classList.remove('hidden');
+  document.getElementById('plansView').classList.add('hidden');
+});
+
+document.getElementById('tabPlans').addEventListener('click', () => {
+  document.getElementById('tabPlans').classList.add('active');
+  document.getElementById('tabMd').classList.remove('active');
+  document.getElementById('plansView').classList.remove('hidden');
+  document.getElementById('mdView').classList.add('hidden');
+});
+
+function renewalParseDate(value) {
+  if (!value) return null;
+  const parts = String(value).split(';').map(x => x.trim()).filter(Boolean);
+  for (const raw of parts) {
+    let m = raw.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    m = raw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (m) return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  }
+  return null;
+}
+
+function renewalFormatDate(date) {
+  if (!date || isNaN(date)) return '—';
+  const dd = String(date.getDate()).padStart(2, '0');
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const yy = date.getFullYear();
+  return `${dd}/${mm}/${yy}`;
+}
+
+function renewalAddDays(date, days) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+function renewalDiffDays(a, b) {
+  return Math.ceil((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function renewalNormalizeName(name) {
+  return String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
+function getRenewalDataForClient(client) {
+  const rows = PLANS.filter(p => renewalNormalizeName(p['Cliente']) === renewalNormalizeName(client));
+  const dates = [];
+
+  rows.forEach(row => {
+    const rawDate = row['Fecha carga PDF'];
+    if (!rawDate) return;
+    String(rawDate).split(';').map(x => x.trim()).filter(Boolean).forEach(piece => {
+      const d = renewalParseDate(piece);
+      if (d && !isNaN(d)) {
+        dates.push({
+          date: d,
+          month: row['Mes plan'] || '',
+          state: row['Estado'] || ''
+        });
+      }
+    });
+  });
+
+  dates.sort((a, b) => a.date - b.date);
+
+  const uniqueDates = [];
+  const seen = new Set();
+  dates.forEach(item => {
+    const key = renewalFormatDate(item.date);
+    if (!seen.has(key)) {
+      uniqueDates.push(item);
+      seen.add(key);
+    }
+  });
+
+  if (!uniqueDates.length) return null;
+
+  let frequency = 30;
+  if (uniqueDates.length >= 2) {
+    const intervals = [];
+    for (let i = 1; i < uniqueDates.length; i++) {
+      const days = renewalDiffDays(uniqueDates[i - 1].date, uniqueDates[i].date);
+      if (days > 0) intervals.push(days);
+    }
+    if (intervals.length) {
+      frequency = Math.round(intervals.reduce((a, b) => a + b, 0) / intervals.length);
+    }
+  }
+
+  const lastPlan = uniqueDates[uniqueDates.length - 1];
+  const renewalDate = renewalAddDays(lastPlan.date, frequency);
+
+  return {
+    client,
+    lastPlanDate: lastPlan.date,
+    lastPlanMonth: lastPlan.month,
+    renewalDate,
+    frequency,
+    planCount: uniqueDates.length
+  };
+}
+
+function renderRenewalBanner() {
+  const banner = document.getElementById('renewalBanner');
+  const list = document.getElementById('renewalList');
+  const todayLabel = document.getElementById('renewalToday');
+
+  if (!banner || !list) return;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const windowStart = new Date(today);
+  windowStart.setDate(today.getDate() - 10);
+
+  const windowEnd = new Date(today);
+  windowEnd.setDate(today.getDate() + 10);
+
+  if (todayLabel) {
+    todayLabel.textContent = `· Período: ${renewalFormatDate(windowStart)} al ${renewalFormatDate(windowEnd)}`;
+  }
+
+  const clients = Array.from(new Set([
+    ...PLANS.map(p => p['Cliente']),
+    ...MDFILES.map(m => m['Cliente'])
+  ].filter(Boolean)));
+
+  const renewals = clients
+    .map(client => getRenewalDataForClient(client))
+    .filter(Boolean)
+    .map(item => ({ ...item, daysLeft: renewalDiffDays(today, item.renewalDate) }))
+    .filter(item => item.renewalDate >= windowStart && item.renewalDate <= windowEnd)
+    .sort((a, b) => a.renewalDate - b.renewalDate)
+    .slice(0, 10);
+
+  banner.classList.remove('hidden');
+
+  if (!renewals.length) {
+    list.innerHTML = `
+      <div class="renewal-card empty-renewal">
+        <div class="renewal-client">Sin renovaciones en este período</div>
+        <div class="renewal-date">${renewalFormatDate(windowStart)} - ${renewalFormatDate(windowEnd)}</div>
+        <div class="renewal-meta">
+          No hay clientes con fecha de renovación dentro del rango de ±10 días de la fecha actual.
+        </div>
+        <span class="renewal-status">Período al día</span>
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = renewals.map(item => {
+    let cardClass = '';
+    let status = '';
+
+    if (item.daysLeft < 0) {
+      cardClass = 'expired';
+      status = `Vencido hace ${Math.abs(item.daysLeft)} día${Math.abs(item.daysLeft) === 1 ? '' : 's'}`;
+    } else if (item.daysLeft === 0) {
+      cardClass = 'urgent';
+      status = 'Renueva hoy';
+    } else {
+      cardClass = 'urgent';
+      status = `Renueva en ${item.daysLeft} día${item.daysLeft === 1 ? '' : 's'}`;
+    }
+
+    return `
+      <div class="renewal-card ${cardClass}">
+        <div class="renewal-client">${esc(item.client)}</div>
+        <div class="renewal-date">${renewalFormatDate(item.renewalDate)}</div>
+        <div class="renewal-meta">
+          Último plan: ${renewalFormatDate(item.lastPlanDate)}
+          ${item.lastPlanMonth ? ` · ${esc(item.lastPlanMonth)}` : ''}
+          <br>
+          Frecuencia estimada: ${item.frequency} días · Planes: ${item.planCount}
+        </div>
+        <span class="renewal-status">${status}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// Iniciar carga de datos de Google Apps Script
+if (typeof google !== 'undefined' && google.script && google.script.run) {
+  google.script.run
+    .withSuccessHandler(init)
+    .withFailureHandler(err => {
+      document.getElementById('resultCount').textContent = 'Error: ' + err.message;
+      document.getElementById('mdContent').innerHTML = '<div class="loading">Error cargando datos: ' + esc(err.message) + '</div>';
+    })
+    .getDashboardData();
+}
+
+// Manejador del Tema (Dark / Light)
+(function initThemeToggle() {
+  const button = document.getElementById('themeToggle');
+  if (!button) return;
+
+  const savedTheme = localStorage.getItem('amazonaFitnessTheme') || 'dark';
+
+  function applyTheme(theme) {
+    const isDark = theme === 'dark';
+    document.body.classList.toggle('dark-mode', isDark);
+    button.textContent = isDark ? 'Modo claro' : 'Modo oscuro';
+    button.setAttribute('aria-pressed', String(isDark));
+    localStorage.setItem('amazonaFitnessTheme', isDark ? 'dark' : 'day');
+  }
+
+  applyTheme(savedTheme);
+
+  button.addEventListener('click', function () {
+    const nextTheme = document.body.classList.contains('dark-mode') ? 'day' : 'dark';
+    applyTheme(nextTheme);
+  });
+})();
+</script>
