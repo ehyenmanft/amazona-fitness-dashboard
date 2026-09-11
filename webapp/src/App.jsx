@@ -50,7 +50,7 @@ export default function App() {
   const [monthFilter, setMonthFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [mdFilter, setMdFilter] = useState('');
-  const [activeTab, setActiveTab] = useState('intake'); // 'intake' | 'client' | 'table'
+  const [activeTab, setActiveTab] = useState('table'); // 'intake' | 'client' | 'table'
 
   // Selected client & plan state
   const [selectedClient, setSelectedClient] = useState('');

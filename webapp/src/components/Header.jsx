@@ -47,17 +47,16 @@ export default function Header({
           <div className="brand-info">
             <div className="brand-badge">
               <Zap size={12} className="brand-badge-icon" />
-              <span className="desktop-only">SISTEMA PROFESIONAL DE ATLETAS</span>
-              <span className="mobile-only">AMAZONA · {getTabTitle()}</span>
+              <span>SISTEMA PROFESIONAL DE ATLETAS</span>
             </div>
-            <h1 className="brand-title desktop-only">AMAZONA FITNESS</h1>
-            <p className="brand-tagline desktop-only">
+            <h1 className="brand-title">AMAZONA FITNESS</h1>
+            <p className="brand-tagline">
               Gestión integral de clientes, intake de cuestionarios, renovaciones y planes individualizados
             </p>
           </div>
         </div>
 
-        {/* Lado derecho: Acciones en el cintillo superior (Sincronización y Modo Claro/Oscuro) */}
+        {/* Lado derecho: Acciones en el cintillo superior (Sincronización, Tema, Configuración, Perfil) */}
         <div className="header-actions">
           {/* Botón de Sincronización en Vivo */}
           <button
@@ -69,7 +68,7 @@ export default function Header({
           >
             <span className={`sync-pulse-dot ${isLiveGAS || isLiveSupabase ? 'live' : 'mock'}`} />
             <RefreshCw size={15} className={`sync-icon ${isLoading ? 'spin' : ''}`} />
-            <span className="sync-btn-label desktop-only">
+            <span className="sync-btn-label">
               {isLoading ? 'Recargando...' : isLiveGAS ? 'Google Sheets' : 'Sincronizar'}
             </span>
           </button>
@@ -83,7 +82,7 @@ export default function Header({
             title={isDarkMode ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
           >
             {isDarkMode ? <Sun size={17} className="text-sun" /> : <Moon size={17} className="text-moon" />}
-            <span className="theme-btn-label desktop-only">
+            <span className="theme-btn-label">
               {isDarkMode ? 'Modo Día' : 'Modo Noche'}
             </span>
           </button>
@@ -101,16 +100,17 @@ export default function Header({
 
           {/* Perfil de Usuario en Escritorio */}
           {currentUser && (
-            <div className="user-profile-widget desktop-only">
+            <div className="user-profile-widget">
               <div className="user-avatar-pill">
                 <User size={14} />
                 <span className="user-name-text">{currentUser.name}</span>
               </div>
               <button
                 type="button"
-                className="action-btn logout-btn"
+                className="header-logout-btn"
                 onClick={onLogout}
                 title="Cerrar sesión"
+                aria-label="Cerrar sesión"
               >
                 <LogOut size={15} />
               </button>

@@ -781,18 +781,18 @@ body {
 .brand-bar {
   max-width: 1560px;
   margin: 0 auto;
-  padding: 16px 28px;
+  padding: 14px 28px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
+  gap: 20px;
 }
 
 .header-left-group {
   display: flex;
   align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 
 .mobile-menu-toggle-btn {
@@ -816,49 +816,61 @@ body {
   border-color: var(--fuchsia);
 }
 
+.brand-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
 .brand-badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   background: var(--green-soft);
   color: var(--green);
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: 999px;
   font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: 2px;
+  line-height: 1;
 }
 
 .brand-title {
   font-family: var(--font-display);
-  font-size: clamp(26px, 3.5vw, 42px);
+  font-size: clamp(20px, 2.4vw, 30px);
   font-weight: 900;
   letter-spacing: -0.02em;
   color: var(--fuchsia);
-  line-height: 1;
+  line-height: 1.1;
+  margin: 0;
 }
 
 .brand-tagline {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
-  margin-top: 6px;
-  max-width: 650px;
+  margin: 0;
+  line-height: 1.35;
+  max-width: 600px;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 /* Botón de Sincronización en el cintillo superior */
 .sync-header-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  padding: 0 14px;
   border-radius: 999px;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -868,6 +880,8 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   height: 38px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .sync-header-btn:hover {
@@ -906,10 +920,10 @@ body {
 
 /* Botón de Modo Claro / Oscuro en el cintillo superior */
 .theme-toggle-header-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  padding: 0 14px;
   border-radius: 999px;
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -919,6 +933,8 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   height: 38px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .theme-toggle-header-btn:hover {
@@ -937,7 +953,7 @@ body {
 
 /* Botón de configuración */
 .header-config-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 38px;
@@ -948,6 +964,7 @@ body {
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .header-config-btn:hover {
@@ -959,29 +976,45 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .user-avatar-pill {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   background: var(--fuchsia-soft);
   color: var(--fuchsia);
-  padding: 6px 14px;
+  padding: 0 14px;
+  height: 38px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 800;
   border: 1px solid var(--fuchsia);
+  white-space: nowrap;
+  box-sizing: border-box;
 }
 
-.logout-btn {
-  padding: 8px;
+.header-logout-btn {
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   color: var(--bad);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
-.logout-btn:hover {
+
+.header-logout-btn:hover {
   border-color: var(--bad);
   background: var(--bad-soft);
+  transform: translateY(-1px);
 }
 
 .spin {
@@ -3307,10 +3340,6 @@ input:focus, select:focus {
   display: none !important;
 }
 
-.desktop-only {
-  display: initial;
-}
-
 /* Responsive adjustments */
 @media (max-width: 1280px) {
   .intake-controls-grid {
@@ -3366,6 +3395,14 @@ input:focus, select:focus {
     display: flex;
   }
 
+  .user-profile-widget {
+    display: none !important;
+  }
+
+  .brand-tagline {
+    display: none !important;
+  }
+
   .app-main-content {
     padding: 16px 20px 36px;
   }
@@ -3378,7 +3415,7 @@ input:focus, select:focus {
   }
 
   .mobile-only {
-    display: initial !important;
+    display: block !important;
   }
 
   /* Bottom navigation */
@@ -3410,7 +3447,7 @@ input:focus, select:focus {
 
   /* Header & Brand Bar */
   .brand-bar {
-    padding: 10px 12px;
+    padding: 8px 12px;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
@@ -3432,15 +3469,18 @@ input:focus, select:focus {
   }
 
   .brand-badge {
-    margin-bottom: 0;
-    padding: 3px 8px;
-    font-size: 10.5px;
-    font-weight: 700;
-    gap: 4px;
-    max-width: 175px;
+    display: none !important;
+  }
+
+  .brand-tagline {
+    display: none !important;
+  }
+
+  .brand-title {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .header-actions {
@@ -3451,24 +3491,30 @@ input:focus, select:focus {
     flex-shrink: 0;
   }
 
+  .sync-btn-label,
+  .theme-btn-label {
+    display: none !important;
+  }
+
   .sync-header-btn {
-    padding: 0 8px;
-    height: 34px;
-    gap: 6px;
-    font-size: 11px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
   }
 
   .theme-toggle-header-btn {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     padding: 0;
     justify-content: center;
     border-radius: 50%;
   }
 
   .header-config-btn {
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
   }
 
   /* KPI Cards: Micro-stats compactos y armónicos */

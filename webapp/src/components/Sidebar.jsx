@@ -29,6 +29,14 @@ export default function Sidebar({
 
   const navItems = [
     {
+      id: 'table',
+      label: 'Tabla de Planes',
+      sublabel: 'Control de Archivos & Drive',
+      icon: Table,
+      badge: plansCount,
+      badgeClass: 'badge-default'
+    },
+    {
       id: 'intake',
       label: 'Respuestas Formulario',
       sublabel: 'Intake de Atletas',
@@ -42,14 +50,6 @@ export default function Sidebar({
       sublabel: 'Visor y Data Markdown',
       icon: User,
       badge: null
-    },
-    {
-      id: 'table',
-      label: 'Tabla de Planes',
-      sublabel: 'Control de Archivos',
-      icon: Table,
-      badge: plansCount,
-      badgeClass: 'badge-default'
     }
   ];
 

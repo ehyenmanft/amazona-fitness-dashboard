@@ -11,6 +11,17 @@ export default function MobileBottomNav({
     <nav className="mobile-bottom-nav">
       <button
         type="button"
+        className={`bottom-nav-btn ${activeTab === 'table' ? 'active' : ''}`}
+        onClick={() => onTabChange('table')}
+      >
+        <div className="bottom-nav-icon-wrap">
+          <Table size={20} />
+        </div>
+        <span>Planes</span>
+      </button>
+
+      <button
+        type="button"
         className={`bottom-nav-btn ${activeTab === 'intake' ? 'active' : ''}`}
         onClick={() => onTabChange('intake')}
       >
@@ -32,17 +43,6 @@ export default function MobileBottomNav({
           <User size={20} />
         </div>
         <span>Ficha</span>
-      </button>
-
-      <button
-        type="button"
-        className={`bottom-nav-btn ${activeTab === 'table' ? 'active' : ''}`}
-        onClick={() => onTabChange('table')}
-      >
-        <div className="bottom-nav-icon-wrap">
-          <Table size={20} />
-        </div>
-        <span>Planes</span>
       </button>
 
       <button
