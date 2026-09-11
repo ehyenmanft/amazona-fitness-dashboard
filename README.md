@@ -1,11 +1,31 @@
 # Amazona Fitness · Dashboard
 
-Plataforma integral y optimizada para la visualización, control de atletas, gestión de planes de nutrición/entrenamiento, seguimiento de renovaciones periódicas y consulta de archivos estructurados desde Google Sheets y Google Drive.
+🌐 **URL de Producción (GitHub Pages)**: [https://ehyenmanft.github.io/amazona-fitness-dashboard/](https://ehyenmanft.github.io/amazona-fitness-dashboard/)  
+📝 **Formulario Bilingüe**: [https://ehyenmanft.github.io/formulario-bilingue/](https://ehyenmanft.github.io/formulario-bilingue/)
 
-Este repositorio consolida la migración desde Google Apps Script a una arquitectura moderna y profesional, dividida en dos componentes complementarios:
-1. **`apps-script/`**: Versión nativa para Google Apps Script, completamente modularizada y lista para desplegar mediante `clasp`.
-2. **`webapp/`**: Aplicación web de última generación desarrollada con **React + Vite**, con diseño visual de alto impacto (Dark/Light mode), visor inteligente de Data de Plan por secciones (nutrición, entrenamiento, suplementos, checklist), filtros instantáneos y alertas predictivas de renovación.
+Plataforma integral y optimizada para la visualización, control de atletas, gestión de planes de nutrición/entrenamiento, seguimiento de renovaciones periódicas y consulta de formularios de ingreso (Intake) estructurados conectados con **Supabase ("Amazona Fitness")** y Google Sheets.
 
+---
+
+## 🎨 Sistema de Diseño UI/UX
+- **Paleta de Colores**: **Blanco**, **Verde (#10b981)** y **Fucsia (#e11474)** con degradados dinámicos, glassmorphism, tarjetas elevadas y micro-animaciones en toda la experiencia.
+- **Vistas Multidimensionales**:
+  1. **Atletas Formulario (Supabase)**: Tabla con filtros, búsqueda global por nombre/email/método de pago, ordenamiento por fecha y visualización en conjunto.
+  2. **Dossier de Atleta Individual**: Modal interactivo con los **46 campos de anamnesis** y biometría agrupados temáticamente, además del comprobante de pago con visor directo.
+  3. **Plan del Atleta**: Cálculo automático de ciclo, frecuencia y visor Markdown clasificado (Nutrición, Entrenamiento, Suplementación).
+  4. **Tabla Maestra de Planes**: Registro histórico con alertas de renovación.
+
+---
+
+## 🗄️ Migración a Supabase ("Amazona Fitness")
+1. Abre tu panel de control en [Supabase](https://supabase.com).
+2. Crea un nuevo proyecto llamado **Amazona Fitness**.
+3. Dirígete a **SQL Editor** y ejecuta el archivo [`supabase/schema.sql`](supabase/schema.sql) incluido en este repositorio.
+4. En **Project Settings > API**, copia la **URL del Proyecto** y la **Anon Key**.
+5. En el Dashboard de GitHub Pages, pulsa en el botón **"Conectar Supabase"** y pega tus credenciales. Los datos se sincronizarán en tiempo real.
+6. El formulario bilingüe también cargará automáticamente las respuestas en la tabla `respuestas_formulario` y subirá los comprobantes al bucket `comprobantes`.
+
+---
 ---
 
 ## 📁 Estructura del Repositorio

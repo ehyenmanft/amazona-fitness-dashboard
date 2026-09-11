@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, X, RotateCcw, User, Table, FileText } from 'lucide-react';
+import { Search, X, RotateCcw, User, Table, ClipboardList } from 'lucide-react';
 
 export default function FilterBar({
   searchQuery,
@@ -16,7 +16,8 @@ export default function FilterBar({
   activeTab,
   onTabChange,
   onResetFilters,
-  resultCount
+  resultCount,
+  intakeCount
 }) {
   const months = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -30,7 +31,7 @@ export default function FilterBar({
           <Search size={16} className="search-icon" />
           <input
             type="text"
-            placeholder="Buscar por cliente, archivo PDF, notas..."
+            placeholder="Buscar en planes, clientes, notas..."
             value={searchQuery}
             onChange={e => onSearchChange(e.target.value)}
           />
@@ -45,7 +46,7 @@ export default function FilterBar({
           value={clientFilter}
           onChange={e => onClientFilterChange(e.target.value)}
         >
-          <option value="">Todos los clientes ({uniqueClients.length})</option>
+          <option value="">Todos los atletas ({uniqueClients.length})</option>
           {uniqueClients.map(c => (
             <option key={c} value={c}>{c}</option>
           ))}
@@ -85,23 +86,30 @@ export default function FilterBar({
       <div className="filter-footer">
         <div className="view-tabs">
           <button
+            className={`tab-btn ${activeTab === 'intake' ? 'active' : ''}`}
+            onClick={() => onTabChange('intake')}
+          >
+            <ClipboardList size={16} />
+            <span>Atletas del Formulario ({intakeCount || 0})</span>
+          </button>
+          <button
             className={`tab-btn ${activeTab === 'client' ? 'active' : ''}`}
             onClick={() => onTabChange('client')}
           >
-            <User size={15} />
-            <span>Ficha Cliente + Data de Plan</span>
+            <User size={16} />
+            <span>Ficha Atleta + Data de Plan</span>
           </button>
           <button
             className={`tab-btn ${activeTab === 'table' ? 'active' : ''}`}
             onClick={() => onTabChange('table')}
           >
-            <Table size={15} />
+            <Table size={16} />
             <span>Tabla de Planes</span>
           </button>
         </div>
 
         <div className="filter-meta">
-          <span className="results-counter">{resultCount} planes filtrados</span>
+          <span className="results-counter">{resultCount} registros encontrados</span>
           <button className="reset-btn" onClick={onResetFilters} title="Restablecer filtros">
             <RotateCcw size={13} />
             <span>Limpiar</span>

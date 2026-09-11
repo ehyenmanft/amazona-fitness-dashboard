@@ -6,22 +6,39 @@ import FilterBar from './components/FilterBar';
 import ClientDetail from './components/ClientDetail';
 import PlanViewer from './components/PlanViewer';
 import PlansTable from './components/PlansTable';
+import IntakeListView from './components/IntakeListView';
+import IntakeDetailModal from './components/IntakeDetailModal';
 import ApiConfigModal from './components/ApiConfigModal';
+import LoginScreen from './components/LoginScreen';
+
+import { getCurrentUser, logoutUser } from './utils/auth';
 import { fetchDashboardData, fetchMarkdownPlan } from './utils/api';
 import { parsePlanMarkdown, normalize } from './utils/planParser';
 import { calculateUpcomingRenewals } from './utils/renewals';
+import {
+  fetchFormResponsesFromSupabase,
+  updateResponseStatusInSupabase,
+  getSupabaseConfig
+} from './utils/supabase';
 
 export default function App() {
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState(getCurrentUser);
+
+  // Theme State
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('amazona_theme') !== 'light';
+    return localStorage.getItem('amazona_theme') === 'dark';
   });
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isLive, setIsLive] = useState(false);
+  const [isLiveGAS, setIsLiveGAS] = useState(false);
+  const [isLiveSupabase, setIsLiveSupabase] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   // Data state
   const [dashboardData, setDashboardData] = useState(null);
+  const [intakeResponses, setIntakeResponses] = useState([]);
+  const [selectedIntakeAthlete, setSelectedIntakeAthlete] = useState(null);
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,7 +46,7 @@ export default function App() {
   const [monthFilter, setMonthFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [mdFilter, setMdFilter] = useState('');
-  const [activeTab, setActiveTab] = useState('client');
+  const [activeTab, setActiveTab] = useState('intake'); // 'intake' | 'client' | 'table'
 
   // Selected client & plan state
   const [selectedClient, setSelectedClient] = useState('');
@@ -45,31 +62,37 @@ export default function App() {
     localStorage.setItem('amazona_theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
-  // Load dashboard data
-  const loadData = useCallback(async () => {
+  // Load all dashboard & intake data
+  const loadAllData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data, isLive: live } = await fetchDashboardData();
-      setDashboardData(data);
-      setIsLive(live);
+      // 1. Cargar datos de Planes y Clientes (GAS / Mock)
+      const { data: gasData, isLive: gasLive } = await fetchDashboardData();
+      setDashboardData(gasData);
+      setIsLiveGAS(gasLive);
 
-      // Default select first client if none selected
-      if (data.uniqueClients && data.uniqueClients.length > 0 && !selectedClient) {
-        const firstClient = data.uniqueClients[0];
-        setSelectedClient(firstClient);
+      if (gasData.uniqueClients && gasData.uniqueClients.length > 0 && !selectedClient) {
+        setSelectedClient(gasData.uniqueClients[0]);
       }
+
+      // 2. Cargar datos de Formulario e Intake (Supabase / Mock)
+      const { data: formResp, isLive: sbLive } = await fetchFormResponsesFromSupabase();
+      setIntakeResponses(formResp);
+      setIsLiveSupabase(sbLive);
     } catch (err) {
-      console.error('Error cargando datos del dashboard:', err);
+      console.error('Error general cargando datos:', err);
     } finally {
       setIsLoading(false);
     }
   }, [selectedClient]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (currentUser) {
+      loadAllData();
+    }
+  }, [currentUser, loadAllData]);
 
-  // When selected client changes, auto-select the latest MD file
+  // When selected client changes in Plan Viewer, auto-select latest MD file
   useEffect(() => {
     if (!dashboardData || !selectedClient) return;
 
@@ -80,7 +103,7 @@ export default function App() {
     if (clientMdFiles.length > 0) {
       const latestFileId = clientMdFiles[0]['MD file ID'];
       setSelectedFileId(latestFileId);
-      loadPlanContent(latestFileId, selectedClient);
+      loadPlanContent(latestFileId);
     } else {
       setSelectedFileId('');
       setPlanInfo(null);
@@ -89,8 +112,7 @@ export default function App() {
     }
   }, [selectedClient, dashboardData]);
 
-  // Load individual plan markdown
-  const loadPlanContent = async (fileId, clientName) => {
+  const loadPlanContent = async (fileId) => {
     if (!fileId) return;
     setIsLoadingPlan(true);
     try {
@@ -108,7 +130,7 @@ export default function App() {
 
   const handleSelectFile = (fileId) => {
     setSelectedFileId(fileId);
-    loadPlanContent(fileId, selectedClient);
+    loadPlanContent(fileId);
   };
 
   // Filtered plans
@@ -131,7 +153,7 @@ export default function App() {
     });
   }, [dashboardData, searchQuery, clientFilter, monthFilter, statusFilter, mdFilter]);
 
-  // Calculated upcoming renewals
+  // Upcoming renewals
   const upcomingRenewals = useMemo(() => {
     if (!dashboardData) return [];
     return calculateUpcomingRenewals(
@@ -156,15 +178,37 @@ export default function App() {
     window.scrollTo({ top: 380, behavior: 'smooth' });
   };
 
+  const handleUpdateIntakeStatus = async (id, newStatus) => {
+    await updateResponseStatusInSupabase(id, newStatus);
+    setIntakeResponses(prev =>
+      prev.map(item => item.id === id ? { ...item, estado_pago: newStatus } : item)
+    );
+    if (selectedIntakeAthlete && selectedIntakeAthlete.id === id) {
+      setSelectedIntakeAthlete(prev => ({ ...prev, estado_pago: newStatus }));
+    }
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    setCurrentUser(null);
+  };
+
+  // Si no está autenticado, mostrar pantalla de inicio de sesión
+  if (!currentUser) {
+    return <LoginScreen onLoginSuccess={setCurrentUser} />;
+  }
+
   return (
     <div className="app-container">
       <Header
         isDarkMode={isDarkMode}
         onToggleTheme={() => setIsDarkMode(!isDarkMode)}
-        isLive={isLive}
+        isLiveSupabase={isLiveSupabase}
         onOpenSettings={() => setIsConfigOpen(true)}
-        onRefresh={loadData}
+        onRefresh={loadAllData}
         isLoading={isLoading}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
       <main className="app-main-content">
@@ -183,7 +227,7 @@ export default function App() {
           }}
         />
 
-        {/* Barra de Filtros y Tabs */}
+        {/* Barra de Filtros y Selector de Pestañas */}
         <FilterBar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
@@ -199,10 +243,21 @@ export default function App() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           onResetFilters={handleResetFilters}
-          resultCount={filteredPlans.length}
+          resultCount={activeTab === 'intake' ? intakeResponses.length : filteredPlans.length}
+          intakeCount={intakeResponses.length}
         />
 
-        {/* Vista: Ficha Atleta + Data de Plan */}
+        {/* VISTA 1: Atletas del Formulario (Respuestas / Intake) */}
+        {activeTab === 'intake' && (
+          <IntakeListView
+            responses={intakeResponses}
+            onSelectResponse={setSelectedIntakeAthlete}
+            onUpdateStatus={handleUpdateIntakeStatus}
+            isLiveSupabase={isLiveSupabase}
+          />
+        )}
+
+        {/* VISTA 2: Ficha Atleta + Data de Plan */}
         {activeTab === 'client' && (
           <div className="dashboard-split-view">
             <ClientDetail
@@ -225,7 +280,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Vista: Tabla General de Planes */}
+        {/* VISTA 3: Tabla General de Planes */}
         {activeTab === 'table' && (
           <PlansTable
             plans={filteredPlans}
@@ -241,15 +296,22 @@ export default function App() {
           <span>Entrenamiento de precisión · Nutrición clínica · Optimización metabólica</span>
         </div>
         <div className="footer-right">
-          <span>Versión 2.0 Pro · Compatible con Google Apps Script & Clasp</span>
+          <span>Versión 2.0 Pro · Blanco, Verde & Fucsia · Supabase & Clasp</span>
         </div>
       </footer>
 
-      {/* Modal de Configuración API */}
+      {/* Modal Ficha Individual Exhaustiva de Atleta (46 preguntas) */}
+      <IntakeDetailModal
+        athlete={selectedIntakeAthlete}
+        onClose={() => setSelectedIntakeAthlete(null)}
+        onUpdateStatus={handleUpdateIntakeStatus}
+      />
+
+      {/* Modal de Configuración Supabase & GAS */}
       <ApiConfigModal
         isOpen={isConfigOpen}
         onClose={() => setIsConfigOpen(false)}
-        onSave={loadData}
+        onSave={loadAllData}
       />
     </div>
   );
