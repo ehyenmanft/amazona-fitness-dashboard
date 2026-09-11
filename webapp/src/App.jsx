@@ -204,6 +204,22 @@ export default function App() {
     setCurrentUser(null);
   };
 
+  const handleTabChange = (newTab) => {
+    // Al pulsar cualquiera de las opciones, cerrar cualquier panel o modal activo
+    setSelectedIntakeAthlete(null);
+    setIsConfigOpen(false);
+    setIsSidebarOpen(false);
+    setActiveTab(newTab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleOpenSidebarFromBottom = () => {
+    // Cerrar cualquier modal o ficha activa y abrir el menú lateral
+    setSelectedIntakeAthlete(null);
+    setIsConfigOpen(false);
+    setIsSidebarOpen(true);
+  };
+
   // Si no está autenticado, mostrar pantalla de inicio de sesión
   if (!currentUser) {
     return <LoginScreen onLoginSuccess={setCurrentUser} />;
@@ -216,13 +232,16 @@ export default function App() {
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         intakeCount={intakeResponses.length}
         plansCount={dashboardData?.plans?.length || 0}
         renewalsCount={upcomingRenewals.length}
         isLiveGAS={isLiveGAS}
         isLiveSupabase={isLiveSupabase}
-        onOpenSettings={() => setIsConfigOpen(true)}
+        onOpenSettings={() => {
+          setSelectedIntakeAthlete(null);
+          setIsConfigOpen(true);
+        }}
         onRefresh={loadAllData}
         isLoading={isLoading}
         isDarkMode={isDarkMode}
@@ -237,12 +256,15 @@ export default function App() {
           onToggleTheme={() => setIsDarkMode(prev => !prev)}
           isLiveGAS={isLiveGAS}
           isLiveSupabase={isLiveSupabase}
-          onOpenSettings={() => setIsConfigOpen(true)}
+          onOpenSettings={() => {
+            setSelectedIntakeAthlete(null);
+            setIsConfigOpen(true);
+          }}
           onRefresh={loadAllData}
           isLoading={isLoading}
           currentUser={currentUser}
           onLogout={handleLogout}
-          onOpenSidebar={() => setIsSidebarOpen(true)}
+          onOpenSidebar={handleOpenSidebarFromBottom}
           activeTab={activeTab}
         />
 
@@ -281,7 +303,7 @@ export default function App() {
               onMdFilterChange={setMdFilter}
               uniqueClients={dashboardData?.uniqueClients || []}
               activeTab={activeTab}
-              onTabChange={setActiveTab}
+              onTabChange={handleTabChange}
               onResetFilters={handleResetFilters}
               resultCount={filteredPlans.length}
               intakeCount={intakeResponses.length}
@@ -345,9 +367,9 @@ export default function App() {
         {/* Barra de Navegación Inferior para Móviles */}
         <MobileBottomNav
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
           intakeCount={intakeResponses.length}
-          onOpenSidebar={() => setIsSidebarOpen(true)}
+          onOpenSidebar={handleOpenSidebarFromBottom}
         />
       </div>
 

@@ -2059,35 +2059,125 @@ input:focus, select:focus {
   border: 1px solid var(--border-light);
 }
 
-.dossier-tabs-bar {
-  padding: 10px 32px;
+.dossier-accordion-toolbar {
+  padding: 10px 24px;
   background: var(--bg-card-inner);
   border-bottom: 1px solid var(--border);
   display: flex;
-  gap: 8px;
-  overflow-x: auto;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.dossier-tab-btn {
+.toolbar-info {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.dossier-toggle-all-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
+  padding: 5px 12px;
   border-radius: 999px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: 12px;
-  font-weight: 700;
-  white-space: nowrap;
+  color: var(--fuchsia);
+  font-size: 11px;
+  font-weight: 800;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dossier-toggle-all-btn:hover {
+  background: var(--fuchsia-soft);
+  border-color: var(--fuchsia);
+}
+
+.dossier-accordion-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
 }
 
-.dossier-tab-btn:hover, .dossier-tab-btn.active {
-  background: var(--fuchsia-soft);
-  border-color: var(--fuchsia);
-  color: var(--fuchsia);
+.dossier-accordion-card.open {
+  border-color: var(--fuchsia-soft);
+}
+
+.dossier-accordion-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--bg-surface);
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.dossier-accordion-header:hover {
+  background: var(--bg-card-hover);
+}
+
+.accordion-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.accordion-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.accordion-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.accordion-title {
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.accordion-count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.accordion-toggle-icon {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.dossier-accordion-body {
+  padding: 16px 18px;
+  background: var(--bg-card-inner);
+  border-top: 1px solid var(--border-light);
+  animation: modalIn 0.15s ease-out;
 }
 
 .dossier-body {
@@ -2949,12 +3039,13 @@ input:focus, select:focus {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000;
   padding: 20px;
 }
 
@@ -3570,16 +3661,16 @@ input:focus, select:focus {
 
   /* Visor Markdown & Ficha de Atleta en Móvil */
   .viewer-header {
-    padding: 14px 16px;
-    gap: 10px;
+    padding: 12px 14px;
+    gap: 8px;
   }
 
   .viewer-title {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .viewer-toolbar {
-    padding: 10px 14px;
+    padding: 10px 12px;
     gap: 8px;
   }
 
@@ -3588,37 +3679,41 @@ input:focus, select:focus {
     width: 100%;
   }
 
+  /* Opciones visibles verticalmente sin deslizamiento horizontal */
   .section-pills-bar {
-    padding: 10px 14px;
+    padding: 8px 12px;
+    display: flex;
+    flex-wrap: wrap;
     gap: 6px;
+    overflow-x: visible;
   }
 
   .section-pill {
-    padding: 4px 10px;
-    font-size: 11px;
+    padding: 4px 8px;
+    font-size: 10.5px;
   }
 
   .viewer-content {
-    padding: 14px 14px;
-    gap: 12px;
+    padding: 12px 12px;
+    gap: 10px;
   }
 
   .section-card-header {
-    padding: 10px 14px;
+    padding: 10px 12px;
   }
 
   .section-card-title {
-    font-size: 14px;
+    font-size: 13.5px;
   }
 
   .section-card-body {
-    padding: 12px 14px;
-    gap: 12px;
+    padding: 12px 12px;
+    gap: 10px;
   }
 
   .kv-cards-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 
   .kv-card-item {
@@ -3626,15 +3721,15 @@ input:focus, select:focus {
   }
 
   .kv-key {
-    font-size: 9.5px;
+    font-size: 9px;
   }
 
   .kv-val {
-    font-size: 12px;
+    font-size: 11.5px;
   }
 
   .client-select-card {
-    padding: 14px;
+    padding: 12px;
   }
 
   .dossier-grid {
@@ -3664,19 +3759,131 @@ input:focus, select:focus {
     padding: 3px 6px;
   }
 
-  /* Modales */
+  /* Modales y Ficha Exhaustiva de Atleta */
   .modal-overlay {
-    padding: 8px;
+    padding: 10px 10px calc(74px + env(safe-area-inset-bottom, 0px));
+    z-index: 2000;
   }
 
   .modal-box,
   .dossier-modal-box {
     max-height: 94vh;
-    margin: 4px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius);
   }
 
-  .dossier-modal-body,
-  .modal-body {
-    padding: 14px;
+  .dossier-header {
+    padding: 14px 14px 10px;
+    gap: 10px;
+  }
+
+  .athlete-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    border-radius: 12px;
+  }
+
+  .athlete-title-row {
+    gap: 6px;
+  }
+
+  .athlete-title-row h2 {
+    font-size: 16px;
+    line-height: 1.25;
+  }
+
+  .status-badge-hero {
+    font-size: 9.5px;
+    padding: 2px 7px;
+  }
+
+  .athlete-contact-chips {
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .contact-chip {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .dossier-accordion-toolbar {
+    padding: 8px 12px;
+  }
+
+  .toolbar-info {
+    font-size: 10px;
+  }
+
+  .dossier-toggle-all-btn {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .dossier-body {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dossier-accordion-card {
+    margin-bottom: 6px;
+  }
+
+  .dossier-accordion-header {
+    padding: 10px 12px;
+  }
+
+  .accordion-icon-wrap {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+  }
+
+  .accordion-icon-wrap svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .accordion-title {
+    font-size: 12.5px;
+  }
+
+  .accordion-count {
+    font-size: 9.5px;
+  }
+
+  .dossier-accordion-body {
+    padding: 10px 12px;
+  }
+
+  .dossier-field-card {
+    padding: 8px 10px;
+  }
+
+  .field-label {
+    font-size: 9px;
+  }
+
+  .field-val {
+    font-size: 12px;
+  }
+
+  .dossier-footer {
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .dossier-action-btn {
+    width: 100%;
+    height: 40px;
+    font-size: 12px;
+    justify-content: center;
   }
 }

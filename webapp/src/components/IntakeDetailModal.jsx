@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import {
   X, User, Target, Dumbbell, Salad, HeartPulse, CreditCard,
-  ExternalLink, CheckCircle2, Clock, MapPin, Phone, Mail, Calendar
+  ExternalLink, CheckCircle2, Clock, MapPin, Phone, Mail, Calendar,
+  ChevronDown, ChevronUp, ChevronsUpDown
 } from 'lucide-react';
 import { formatDateDisplay } from '../utils/dateUtils';
 
@@ -10,33 +11,99 @@ export default function IntakeDetailModal({
   onClose,
   onUpdateStatus
 }) {
-  const [activeTab, setActiveTab] = useState('personal');
+  // Estado para controlar qué secciones tipo acordeón están abiertas.
+  // La primera sección se abre por defecto para acceso rápido.
+  const [openSections, setOpenSections] = useState({
+    personal: true,
+    goals: false,
+    training: false,
+    nutrition: false,
+    health: false,
+    payment: false
+  });
 
   if (!athlete) return null;
 
   const isVerified = athlete.estado_pago === 'Aprobado y Verificado';
 
-  const tabs = [
-    { id: 'personal', label: 'Datos & Medidas', icon: User },
-    { id: 'goals', label: 'Objetivos & Metas', icon: Target },
-    { id: 'training', label: 'Entrenamiento & Rutina', icon: Dumbbell },
-    { id: 'nutrition', label: 'Nutrición & Hábitos', icon: Salad },
-    { id: 'health', label: 'Salud & Suplementos', icon: HeartPulse },
-    { id: 'payment', label: 'Pago & Comprobante', icon: CreditCard }
+  const toggleSection = (sectionId) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+  };
+
+  const areAllOpen = Object.values(openSections).every(Boolean);
+
+  const toggleAll = () => {
+    const nextState = !areAllOpen;
+    setOpenSections({
+      personal: nextState,
+      goals: nextState,
+      training: nextState,
+      nutrition: nextState,
+      health: nextState,
+      payment: nextState
+    });
+  };
+
+  const sections = [
+    {
+      id: 'personal',
+      title: 'Datos Personales & Medidas Físicas',
+      icon: User,
+      color: '#ec4899',
+      count: 9
+    },
+    {
+      id: 'goals',
+      title: 'Objetivos & Metas Físicas',
+      icon: Target,
+      color: '#f59e0b',
+      count: 5
+    },
+    {
+      id: 'training',
+      title: 'Entrenamiento & Nivel de Actividad',
+      icon: Dumbbell,
+      color: '#3b82f6',
+      count: 9
+    },
+    {
+      id: 'nutrition',
+      title: 'Nutrición, Dieta & Hábitos Diarios',
+      icon: Salad,
+      color: '#10b981',
+      count: 10
+    },
+    {
+      id: 'health',
+      title: 'Salud, Lesiones & Suplementación',
+      icon: HeartPulse,
+      color: '#8b5cf6',
+      count: 9
+    },
+    {
+      id: 'payment',
+      title: 'Pago & Verificación de Comprobante',
+      icon: CreditCard,
+      color: '#14b8a6',
+      count: 3
+    }
   ];
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="dossier-modal-box" onClick={e => e.stopPropagation()}>
-        {/* Encabezado de la Ficha del Atleta */}
+        {/* Encabezado fijo y estilizado de la Ficha del Atleta */}
         <div className="dossier-header">
           <div className="dossier-hero">
             <div className="athlete-avatar">
-              {athlete.nombre_completo.charAt(0).toUpperCase()}
+              {athlete.nombre_completo ? athlete.nombre_completo.charAt(0).toUpperCase() : 'A'}
             </div>
             <div className="athlete-header-meta">
               <div className="athlete-title-row">
-                <h2>{athlete.nombre_completo}</h2>
+                <h2>{athlete.nombre_completo || 'Atleta Sin Nombre'}</h2>
                 <span className={`status-badge-hero ${isVerified ? 'verified' : 'pending'}`}>
                   {athlete.estado_pago || 'Pendiente de verificación'}
                 </span>
@@ -68,31 +135,41 @@ export default function IntakeDetailModal({
             </div>
           </div>
 
-          <button className="modal-close-btn" onClick={onClose}>
+          <button
+            type="button"
+            className="modal-close-btn"
+            onClick={onClose}
+            aria-label="Cerrar ficha"
+            title="Cerrar ficha"
+          >
             <X size={20} />
           </button>
         </div>
 
-        {/* Barra de pestañas de la ficha */}
-        <div className="dossier-tabs-bar">
-          {tabs.map(t => {
-            const Icon = t.icon;
-            return (
-              <button
-                key={t.id}
-                className={`dossier-tab-btn ${activeTab === t.id ? 'active' : ''}`}
-                onClick={() => setActiveTab(t.id)}
-              >
-                <Icon size={15} />
-                <span>{t.label}</span>
-              </button>
-            );
-          })}
+        {/* Barra superior de control: Expandir o Colapsar todos los paneles */}
+        <div className="dossier-accordion-toolbar">
+          <span className="toolbar-info">
+            {sections.length} secciones de evaluación · Todo vertical
+          </span>
+          <button
+            type="button"
+            className="dossier-toggle-all-btn"
+            onClick={toggleAll}
+            title={areAllOpen ? 'Cerrar todos los paneles' : 'Abrir todos los paneles'}
+          >
+            <ChevronsUpDown size={14} />
+            <span>{areAllOpen ? 'Colapsar todos' : 'Expandir todos'}</span>
+          </button>
         </div>
 
-        {/* Contenido por pestaña */}
+        {/* Cuerpo con secciones verticales tipo acordeón (sin deslizamiento horizontal) */}
         <div className="dossier-body">
-          {activeTab === 'personal' && (
+          {/* SECCIÓN 1: Datos Personales & Medidas */}
+          <AccordionPanel
+            isOpen={openSections.personal}
+            onToggle={() => toggleSection('personal')}
+            section={sections[0]}
+          >
             <div className="dossier-grid">
               <FieldCard label="Nombre Completo" value={athlete.nombre_completo} />
               <FieldCard label="Edad" value={athlete.edad ? `${athlete.edad} años` : '—'} />
@@ -104,9 +181,14 @@ export default function IntakeDetailModal({
               <FieldCard label="Correo Electrónico" value={athlete.email || athlete.email_direccion} />
               <FieldCard label="Teléfono de Contacto" value={athlete.telefono} />
             </div>
-          )}
+          </AccordionPanel>
 
-          {activeTab === 'goals' && (
+          {/* SECCIÓN 2: Objetivos & Metas */}
+          <AccordionPanel
+            isOpen={openSections.goals}
+            onToggle={() => toggleSection('goals')}
+            section={sections[1]}
+          >
             <div className="dossier-grid">
               <FieldCard full label="¿Cuál es tu objetivo principal?" value={athlete.objetivo_principal} highlight />
               <FieldCard label="Nivel de Importancia (1 al 10)" value={athlete.importancia_objetivo ? `${athlete.importancia_objetivo} / 10` : '—'} />
@@ -114,9 +196,14 @@ export default function IntakeDetailModal({
               <FieldCard full label="¿Qué te motiva a alcanzar este objetivo?" value={athlete.motivacion} />
               <FieldCard full label="Objetivos específicos adicionales" value={athlete.objetivos_especificos} />
             </div>
-          )}
+          </AccordionPanel>
 
-          {activeTab === 'training' && (
+          {/* SECCIÓN 3: Entrenamiento */}
+          <AccordionPanel
+            isOpen={openSections.training}
+            onToggle={() => toggleSection('training')}
+            section={sections[2]}
+          >
             <div className="dossier-grid">
               <FieldCard label="Disciplina Deportiva" value={athlete.disciplina_deportiva} />
               <FieldCard label="Nivel de Experiencia" value={athlete.nivel_experiencia} />
@@ -128,26 +215,36 @@ export default function IntakeDetailModal({
               <FieldCard label="Tiempo disponible por sesión" value={athlete.tiempo_ejercicio} />
               <FieldCard full label="Tipo de ejercicio que realiza actualmente" value={athlete.tipo_ejercicio_actual} />
             </div>
-          )}
+          </AccordionPanel>
 
-          {activeTab === 'nutrition' && (
+          {/* SECCIÓN 4: Nutrición & Hábitos */}
+          <AccordionPanel
+            isOpen={openSections.nutrition}
+            onToggle={() => toggleSection('nutrition')}
+            section={sections[3]}
+          >
             <div className="dossier-grid">
               <FieldCard label="Tipo de Dieta Actual" value={athlete.dieta_actual} />
               <FieldCard label="Horas de sueño por noche" value={athlete.horas_sueno} />
               <FieldCard label="Nivel de Estrés" value={athlete.nivel_estres} />
               <FieldCard label="Consumo de agua diario" value={athlete.consumo_agua_litros} />
               <FieldCard label="Consumo de café o energéticas" value={athlete.consumo_cafe} />
-              <FieldCard full label="Alergias o intolerancias alimenticias" value={athlete.alergias_alimenticias} />
+              <FieldCard full label="Alergias o intolerancias alimenticias" value={athlete.alergias_alimenticias} highlight />
               <FieldCard full label="Alimentos que prefieres evitar" value={athlete.alimentos_evitar} />
               <FieldCard full label="Alimentos que prefieres incluir" value={athlete.alimentos_preferidos} highlight />
               <FieldCard full label="Horarios específicos para comidas principales" value={athlete.horarios_comidas} />
               <FieldCard full label="Comodidad al reducir carbohidratos o grasas" value={athlete.reduccion_macros_comodo} />
             </div>
-          )}
+          </AccordionPanel>
 
-          {activeTab === 'health' && (
+          {/* SECCIÓN 5: Salud & Suplementos */}
+          <AccordionPanel
+            isOpen={openSections.health}
+            onToggle={() => toggleSection('health')}
+            section={sections[4]}
+          >
             <div className="dossier-grid">
-              <FieldCard full label="Condición médica diagnosticada" value={athlete.condicion_medica} />
+              <FieldCard full label="Condición médica diagnosticada" value={athlete.condicion_medica} highlight />
               <FieldCard label="Medicamentos regulares" value={athlete.medicamentos} />
               <FieldCard label="Tratamiento médico / fisioterapia actual" value={athlete.tratamiento_medico} />
               <FieldCard full label="Problemas con entrenamientos previos" value={athlete.problemas_previos} />
@@ -157,9 +254,14 @@ export default function IntakeDetailModal({
               <FieldCard label="Alergia a algún suplemento" value={athlete.alergia_suplementos} />
               <FieldCard label="Consentimiento para testimonios" value={athlete.consentimiento_testimonios} />
             </div>
-          )}
+          </AccordionPanel>
 
-          {activeTab === 'payment' && (
+          {/* SECCIÓN 6: Pago & Comprobante */}
+          <AccordionPanel
+            isOpen={openSections.payment}
+            onToggle={() => toggleSection('payment')}
+            section={sections[5]}
+          >
             <div className="dossier-grid">
               <FieldCard label="Método de Pago Utilizado" value={athlete.metodo_pago} highlight />
               <FieldCard label="Estado de Verificación" value={athlete.estado_pago} />
@@ -183,10 +285,10 @@ export default function IntakeDetailModal({
                 )}
               </div>
             </div>
-          )}
+          </AccordionPanel>
         </div>
 
-        {/* Pie de la Ficha con botones de acción */}
+        {/* Pie fijo de la Ficha con botones de acción visibles */}
         <div className="dossier-footer">
           <div className="dossier-status-actions">
             <button
@@ -208,7 +310,7 @@ export default function IntakeDetailModal({
             </button>
           </div>
 
-          <button className="dossier-action-btn close" onClick={onClose}>
+          <button type="button" className="dossier-action-btn close" onClick={onClose}>
             Cerrar Ficha
           </button>
         </div>
@@ -217,6 +319,45 @@ export default function IntakeDetailModal({
   );
 }
 
+// Componente de Panel de Acordeón Vertical
+function AccordionPanel({ isOpen, onToggle, section, children }) {
+  const Icon = section.icon;
+
+  return (
+    <div className={`dossier-accordion-card ${isOpen ? 'open' : 'closed'}`}>
+      <button
+        type="button"
+        className="dossier-accordion-header"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+      >
+        <div className="accordion-title-group">
+          <div
+            className="accordion-icon-wrap"
+            style={{ color: section.color, backgroundColor: `${section.color}18` }}
+          >
+            <Icon size={16} />
+          </div>
+          <div className="accordion-text">
+            <span className="accordion-title">{section.title}</span>
+            <span className="accordion-count">{section.count} datos</span>
+          </div>
+        </div>
+        <div className="accordion-toggle-icon">
+          {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="dossier-accordion-body">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Componente para tarjeta individual de dato
 function FieldCard({ label, value, full, highlight }) {
   return (
     <div className={`dossier-field-card ${full ? 'col-span-full' : ''} ${highlight ? 'highlight' : ''}`}>
