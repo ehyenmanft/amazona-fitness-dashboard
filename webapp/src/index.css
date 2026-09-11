@@ -289,6 +289,34 @@ body {
 }
 
 /* =========================================================
+   BARRAS DE DESPLAZAMIENTO VERTICAL Y HORIZONTAL VISIBLES
+   ========================================================= */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(225, 20, 116, 0.45) var(--bg-card-inner);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-card-inner);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(225, 20, 116, 0.45);
+  border-radius: 999px;
+  border: 2px solid var(--bg-card-inner);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fuchsia);
+}
+
+/* =========================================================
    APP SHELL & LAYOUT CON MENU LATERAL (SIDEBAR & DRAWER)
    ========================================================= */
 .app-layout {
@@ -2103,6 +2131,8 @@ input:focus, select:focus {
   margin-bottom: 10px;
   box-shadow: var(--shadow-sm);
   transition: all 0.2s ease;
+  flex-shrink: 0 !important;
+  width: 100%;
 }
 
 .dossier-accordion-card.open {
@@ -2120,6 +2150,7 @@ input:focus, select:focus {
   cursor: pointer;
   text-align: left;
   transition: background 0.15s ease;
+  user-select: none;
 }
 
 .dossier-accordion-header:hover {
@@ -2181,9 +2212,30 @@ input:focus, select:focus {
 }
 
 .dossier-body {
-  padding: 24px 32px;
-  overflow-y: auto;
-  flex: 1;
+  padding: 20px 28px;
+  overflow-y: auto !important;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.dossier-body::-webkit-scrollbar {
+  width: 7px;
+  display: block;
+}
+
+.dossier-body::-webkit-scrollbar-track {
+  background: var(--bg-card-inner);
+  border-radius: 999px;
+}
+
+.dossier-body::-webkit-scrollbar-thumb {
+  background: var(--fuchsia);
+  border-radius: 999px;
 }
 
 .dossier-grid {
@@ -3765,18 +3817,20 @@ input:focus, select:focus {
     z-index: 2000;
   }
 
-  .modal-box,
   .dossier-modal-box {
-    max-height: 94vh;
+    max-height: 90vh;
+    height: 90vh;
     margin: 0;
     display: flex;
     flex-direction: column;
     border-radius: var(--radius);
+    overflow: hidden;
   }
 
   .dossier-header {
-    padding: 14px 14px 10px;
-    gap: 10px;
+    padding: 12px 14px 10px;
+    gap: 8px;
+    flex-shrink: 0;
   }
 
   .athlete-avatar {
@@ -3812,6 +3866,7 @@ input:focus, select:focus {
 
   .dossier-accordion-toolbar {
     padding: 8px 12px;
+    flex-shrink: 0;
   }
 
   .toolbar-info {
@@ -3824,18 +3879,40 @@ input:focus, select:focus {
   }
 
   .dossier-body {
-    padding: 10px 12px;
+    padding: 12px 12px 24px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
+    flex: 1 1 auto;
+    min-height: 0; /* IMPRESCINDIBLE para scroll interno */
+    overflow-y: auto !important; /* HABILITA BARRA DE DESPLAZAMIENTO VERTICAL */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .dossier-body::-webkit-scrollbar {
+    width: 6px;
+    display: block;
+  }
+
+  .dossier-body::-webkit-scrollbar-track {
+    background: var(--bg-card-inner);
+    border-radius: 999px;
+  }
+
+  .dossier-body::-webkit-scrollbar-thumb {
+    background: var(--fuchsia);
+    border-radius: 999px;
   }
 
   .dossier-accordion-card {
-    margin-bottom: 6px;
+    flex-shrink: 0 !important; /* NUNCA APLASTAR */
+    width: 100%;
+    margin-bottom: 8px;
   }
 
   .dossier-accordion-header {
-    padding: 10px 12px;
+    padding: 12px 12px;
   }
 
   .accordion-icon-wrap {
@@ -3850,7 +3927,8 @@ input:focus, select:focus {
   }
 
   .accordion-title {
-    font-size: 12.5px;
+    font-size: 13px;
+    font-weight: 800;
   }
 
   .accordion-count {
@@ -3858,7 +3936,12 @@ input:focus, select:focus {
   }
 
   .dossier-accordion-body {
-    padding: 10px 12px;
+    padding: 12px 12px;
+  }
+
+  .dossier-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 
   .dossier-field-card {
@@ -3874,16 +3957,34 @@ input:focus, select:focus {
   }
 
   .dossier-footer {
-    padding: 12px 14px;
+    padding: 10px 14px;
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* Horizontal para no ocupar tanto espacio vertical */
+    align-items: center;
     gap: 8px;
+    flex-shrink: 0; /* Fijo al pie */
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .dossier-status-actions {
+    flex: 1;
+    min-width: 0;
   }
 
   .dossier-action-btn {
     width: 100%;
-    height: 40px;
+    height: 42px;
     font-size: 12px;
+    font-weight: 800;
+    padding: 0 10px;
     justify-content: center;
+    border-radius: var(--radius-xs);
+  }
+
+  .dossier-action-btn.close {
+    flex: 0 0 95px;
+    min-width: 95px;
+    width: auto;
   }
 }
