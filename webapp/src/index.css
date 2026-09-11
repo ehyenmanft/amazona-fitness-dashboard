@@ -79,6 +79,13 @@ body.dark-mode {
   padding: 0;
 }
 
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  position: relative;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-main);
@@ -86,7 +93,13 @@ body {
   min-height: 100vh;
   line-height: 1.5;
   transition: background-color 0.25s ease, color 0.25s ease;
-  overflow-x: hidden;
+}
+
+#root {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+  width: 100% !important;
+  min-height: 100vh;
 }
 
 /* =========================================================
@@ -323,16 +336,22 @@ body {
   display: flex;
   min-height: 100vh;
   width: 100%;
+  max-width: 100% !important;
   background-color: var(--bg-main);
   position: relative;
+  overflow-x: hidden !important;
 }
 
 .app-main-wrapper {
   flex: 1;
   min-width: 0;
+  max-width: 100% !important;
+  width: 100%;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-x: hidden !important;
+  box-sizing: border-box;
 }
 
 .app-main-content {
@@ -341,6 +360,9 @@ body {
   margin: 0 auto;
   padding: 24px 32px 48px;
   flex: 1;
+  min-width: 0;
+  overflow-x: hidden !important;
+  box-sizing: border-box;
 }
 
 /* Backdrop para móviles */
@@ -2421,15 +2443,21 @@ input:focus, select:focus {
    ========================================================= */
 .dashboard-split-view {
   display: grid;
-  grid-template-columns: 390px 1fr;
-  gap: 24px;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 20px;
   align-items: start;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .client-sidebar {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
 }
 
 .sidebar-label {
@@ -2667,12 +2695,16 @@ input:focus, select:focus {
 .md-filename {
   font-size: 11px;
   color: var(--text-secondary);
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .md-id-code {
   font-family: monospace;
   font-size: 10px;
   color: var(--text-muted);
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 /* Plan Viewer */
@@ -2685,6 +2717,10 @@ input:focus, select:focus {
   min-height: 700px;
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .plan-viewer-empty {
@@ -2699,6 +2735,9 @@ input:focus, select:focus {
   align-items: center;
   justify-content: center;
   gap: 14px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .empty-icon {
@@ -2716,33 +2755,52 @@ input:focus, select:focus {
 }
 
 .viewer-header {
-  padding: 22px 28px;
+  padding: 18px 24px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 14px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.viewer-title-group {
+  min-width: 0;
+  max-width: 100%;
+  flex: 1;
 }
 
 .viewer-title {
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 900;
   color: var(--fuchsia);
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .viewer-meta {
   display: flex;
-  gap: 14px;
+  flex-wrap: wrap;
+  gap: 6px 14px;
   font-size: 12px;
   color: var(--text-muted);
   margin-top: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.meta-item {
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .drive-source-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   padding: 8px 16px;
@@ -2753,24 +2811,32 @@ input:focus, select:focus {
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .viewer-toolbar {
-  padding: 14px 28px;
+  padding: 12px 24px;
   background: var(--bg-card-inner);
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .inside-search-wrap {
   position: relative;
   display: flex;
   align-items: center;
-  min-width: 320px;
+  flex: 1;
+  min-width: 220px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .inside-search-wrap svg {
@@ -3865,42 +3931,125 @@ input:focus, select:focus {
   }
 
   /* Visor Markdown & Ficha de Atleta en Móvil */
+  .client-dossier-view-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  .dashboard-split-view {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .client-sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .client-summary-card,
+  .client-drive-card,
+  .md-files-card {
+    padding: 12px !important;
+    border-radius: var(--radius-sm) !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
   .viewer-header {
-    padding: 12px 14px;
-    gap: 8px;
+    padding: 12px 14px !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .viewer-title {
-    font-size: 16px;
+    font-size: 16px !important;
+    line-height: 1.25 !important;
+    word-break: break-word !important;
+  }
+
+  .viewer-meta {
+    flex-direction: column !important;
+    gap: 3px !important;
+    font-size: 11px !important;
+    max-width: 100% !important;
+  }
+
+  .meta-item {
+    word-break: break-all !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .drive-source-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 8px 12px !important;
+    border-radius: var(--radius-xs) !important;
+    box-sizing: border-box !important;
   }
 
   .viewer-toolbar {
-    padding: 10px 12px;
-    gap: 8px;
+    padding: 10px 12px !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .inside-search-wrap {
-    min-width: 100%;
-    width: 100%;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .toolbar-actions {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+
+  .tool-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 7px 8px !important;
+    font-size: 10.5px !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
   }
 
   /* Opciones visibles verticalmente sin deslizamiento horizontal */
   .section-pills-bar {
-    padding: 8px 12px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    overflow-x: visible;
+    padding: 8px 10px !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .section-pill {
-    padding: 4px 8px;
-    font-size: 10.5px;
+    padding: 4px 8px !important;
+    font-size: 10.5px !important;
   }
 
   .viewer-content {
-    padding: 12px 12px;
-    gap: 10px;
+    padding: 10px 10px !important;
+    gap: 10px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .section-card-header {
