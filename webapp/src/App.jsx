@@ -247,22 +247,24 @@ export default function App() {
         />
 
         <main className="app-main-content">
-          {/* Banner de Renovaciones Predictivas */}
-          {upcomingRenewals.length > 0 && (
+          {/* Banner de Renovaciones Predictivas (solo en vistas de planes) */}
+          {upcomingRenewals.length > 0 && activeTab !== 'intake' && (
             <RenewalBanner
               renewals={upcomingRenewals}
               onSelectClient={handleSelectClientFromAnywhere}
             />
           )}
 
-          {/* Tarjetas KPI Superiores */}
-          <KpiCards
-            summary={dashboardData?.summary}
-            onFilterStatus={(status) => {
-              setStatusFilter(status);
-              setActiveTab('table');
-            }}
-          />
+          {/* Tarjetas KPI Superiores (solo en vistas de planes) */}
+          {activeTab !== 'intake' && (
+            <KpiCards
+              summary={dashboardData?.summary}
+              onFilterStatus={(status) => {
+                setStatusFilter(status);
+                setActiveTab('table');
+              }}
+            />
+          )}
 
           {/* Barra de Filtros para Vistas de Planes */}
           {activeTab !== 'intake' && (

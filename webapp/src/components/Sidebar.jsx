@@ -30,7 +30,7 @@ export default function Sidebar({
   const navItems = [
     {
       id: 'intake',
-      label: 'Respuestas de Formulario',
+      label: 'Respuestas Formulario',
       sublabel: 'Intake de Atletas',
       icon: ClipboardList,
       badge: intakeCount,
@@ -38,14 +38,14 @@ export default function Sidebar({
     },
     {
       id: 'client',
-      label: 'Ficha & Data de Plan',
-      sublabel: 'Visor Markdown',
+      label: 'Ficha del Atleta',
+      sublabel: 'Visor y Data Markdown',
       icon: User,
       badge: null
     },
     {
       id: 'table',
-      label: 'Tabla Maestra de Planes',
+      label: 'Tabla de Planes',
       sublabel: 'Control de Archivos',
       icon: Table,
       badge: plansCount,

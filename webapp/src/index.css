@@ -556,27 +556,35 @@ body {
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  justify-content: center;
 }
 
 .nav-item-title {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+  color: var(--text-primary);
+  white-space: normal;
+  word-break: break-word;
+}
+
+.sidebar-nav-item.active .nav-item-title {
+  color: var(--fuchsia);
 }
 
 .nav-item-sub {
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-muted);
+  margin-top: 1px;
 }
 
 .nav-item-badge {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 800;
   padding: 2px 8px;
   border-radius: 999px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .nav-item-badge.badge-fuchsia {
@@ -3136,18 +3144,31 @@ input:focus, select:focus {
     bottom: 0;
     left: 0;
     height: 100vh;
+    width: min(325px, 86vw);
+    max-width: 340px;
     z-index: 1050;
     transform: translateX(-100%);
     box-shadow: none;
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
   .sidebar-aside.open {
     transform: translateX(0);
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.75);
+  }
+
+  .sidebar-header {
+    padding: 18px 18px 14px;
   }
 
   .sidebar-close-btn {
     display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
   }
 
   .mobile-menu-toggle-btn {
@@ -3155,7 +3176,7 @@ input:focus, select:focus {
   }
 
   .app-main-content {
-    padding: 20px 20px 40px;
+    padding: 16px 20px 36px;
   }
 }
 
@@ -3172,6 +3193,20 @@ input:focus, select:focus {
   /* Bottom navigation */
   .mobile-bottom-nav {
     display: flex;
+    height: 56px;
+    padding: 0 4px;
+  }
+
+  .bottom-nav-btn {
+    font-size: 9.5px;
+    gap: 2px;
+  }
+
+  .bottom-nav-badge {
+    font-size: 8.5px;
+    padding: 1px 4px;
+    top: -3px;
+    right: -6px;
   }
 
   .app-main-wrapper {
@@ -3179,28 +3214,39 @@ input:focus, select:focus {
   }
 
   .app-main-content {
-    padding: 12px 14px 28px;
+    padding: 10px 12px 24px;
   }
 
+  /* Header & Brand Bar */
   .brand-bar {
-    padding: 12px 14px;
+    padding: 10px 12px;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    height: 56px;
   }
 
   .header-left-group {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .mobile-menu-toggle-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
   }
 
   .brand-badge {
     margin-bottom: 0;
-    padding: 3px 10px;
-    font-size: 11px;
-    max-width: 180px;
+    padding: 3px 8px;
+    font-size: 10.5px;
+    font-weight: 700;
+    gap: 4px;
+    max-width: 175px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -3211,25 +3257,182 @@ input:focus, select:focus {
     align-items: center;
     gap: 6px;
     width: auto;
+    flex-shrink: 0;
   }
 
   .connection-pill {
-    padding: 6px 10px;
+    padding: 5px 8px;
+    font-size: 11px;
+    gap: 4px;
   }
 
-  /* Intake List Mobile View */
-  .intake-responsive-table {
-    display: none !important;
+  .action-btn.icon-btn {
+    width: 34px;
+    height: 34px;
+    padding: 0;
   }
 
-  .intake-mobile-cards-container {
-    display: flex !important;
+  /* KPI Cards: Micro-stats compactos y armónicos */
+  .kpi-cards-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .kpi-card {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  .kpi-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .kpi-label {
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+  }
+
+  .kpi-icon-wrap {
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+  }
+
+  .kpi-icon-wrap svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .kpi-value {
+    font-size: 20px;
+    font-weight: 800;
+    margin-top: 4px;
+    line-height: 1;
+  }
+
+  .kpi-sub {
+    font-size: 9.5px;
+    margin-top: 2px;
+  }
+
+  /* Banner de Renovaciones: Carrusel horizontal táctil */
+  .renewal-section {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+  }
+
+  .renewal-header {
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+
+  .renewal-title-box {
+    gap: 6px;
+  }
+
+  .renewal-title-box h3 {
+    font-size: 13.5px;
+  }
+
+  .renewal-window-badge,
+  .renewal-count-badge {
+    font-size: 9.5px;
+    padding: 2px 6px;
+  }
+
+  .renewal-cards-grid {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .renewal-cards-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .renewal-card {
+    flex: 0 0 230px;
+    min-width: 230px;
+    padding: 10px 12px;
+    border-radius: var(--radius-xs);
+  }
+
+  .renewal-client-name {
+    font-size: 13px;
+  }
+
+  /* Barra de Filtros de Planes */
+  .filter-panel {
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    border-radius: var(--radius-sm);
+  }
+
+  .filter-controls-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .filter-controls-grid select,
+  .search-input-wrap input {
+    height: 38px;
+    font-size: 12px;
+  }
+
+  .filter-footer {
     flex-direction: column;
-    gap: 12px;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+
+  .view-tabs {
+    display: none; /* Navegación fluida por Sidebar y MobileBottomNav */
+  }
+
+  .filter-meta {
+    justify-content: space-between;
+    width: 100%;
+    font-size: 11px;
+  }
+
+  /* Módulo Intake (Atletas) en Móvil */
+  .intake-controls-card {
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  .intake-search-and-mobile-bar {
+    gap: 8px;
+  }
+
+  .intake-search-box input {
+    height: 38px;
+    font-size: 12.5px;
+    padding-left: 34px;
+  }
+
+  .intake-search-box svg {
+    left: 10px;
+    width: 15px;
+    height: 15px;
   }
 
   .intake-mobile-toggle-btn {
-    display: flex;
+    height: 38px;
+    padding: 0 10px;
+    font-size: 11px;
+    border-radius: var(--radius-xs);
   }
 
   .intake-controls-collapsible {
@@ -3238,7 +3441,9 @@ input:focus, select:focus {
 
   .intake-controls-collapsible.open {
     display: block;
-    margin-top: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-light);
   }
 
   .intake-controls-grid {
@@ -3246,29 +3451,220 @@ input:focus, select:focus {
     gap: 8px;
   }
 
-  .filter-controls-grid {
-    grid-template-columns: 1fr;
+  .intake-select-wrapper select {
+    height: 38px;
+    font-size: 12px;
+    padding-left: 32px;
   }
 
-  .kpi-cards-grid {
-    grid-template-columns: 1fr 1fr;
+  .intake-select-wrapper .select-icon {
+    left: 10px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .intake-secondary-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .intake-custom-dates-bar {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .intake-actions-cluster {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .intake-reset-btn,
+  .intake-export-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 10px;
+    font-size: 11px;
+    height: 36px;
+  }
+
+  .intake-table-card {
+    border-radius: var(--radius-sm);
+  }
+
+  .intake-table-header-info {
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .intake-table-header-info h3 {
+    font-size: 14.5px;
+  }
+
+  .intake-table-header-info p {
+    font-size: 11px;
+  }
+
+  .sync-status-badge {
+    font-size: 9.5px;
+    padding: 2px 7px;
+  }
+
+  /* Ocultar tabla ancha en móvil y mostrar tarjetas */
+  .intake-responsive-table {
+    display: none !important;
+  }
+
+  .intake-mobile-cards-container {
+    display: flex !important;
+    flex-direction: column;
+    padding: 10px 10px;
     gap: 10px;
+  }
+
+  .intake-mobile-card {
+    padding: 12px;
+    border-radius: var(--radius-xs);
+    gap: 8px;
+  }
+
+  .mobile-athlete-name {
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .mobile-date-sub {
+    font-size: 10.5px;
+    gap: 4px;
+  }
+
+  .mobile-card-meta-grid {
+    padding: 7px 9px;
+    font-size: 11px;
+    gap: 5px;
+  }
+
+  .mobile-goal-box {
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+
+  .mobile-goal-box .goal-label {
+    font-size: 10px;
+  }
+
+  .mobile-card-footer {
+    padding-top: 8px;
+    gap: 6px;
+  }
+
+  .mobile-full-btn {
+    padding: 5px 10px;
+    font-size: 10.5px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Visor Markdown & Ficha de Atleta en Móvil */
+  .viewer-header {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .viewer-title {
+    font-size: 18px;
+  }
+
+  .viewer-toolbar {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .inside-search-wrap {
+    min-width: 100%;
+    width: 100%;
+  }
+
+  .section-pills-bar {
+    padding: 10px 14px;
+    gap: 6px;
+  }
+
+  .section-pill {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+
+  .viewer-content {
+    padding: 14px 14px;
+    gap: 12px;
+  }
+
+  .section-card-header {
+    padding: 10px 14px;
+  }
+
+  .section-card-title {
+    font-size: 14px;
+  }
+
+  .section-card-body {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .kv-cards-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .kv-card-item {
+    padding: 8px 10px;
+  }
+
+  .kv-key {
+    font-size: 9.5px;
+  }
+
+  .kv-val {
+    font-size: 12px;
+  }
+
+  .client-select-card {
+    padding: 14px;
   }
 
   .dossier-grid {
     grid-template-columns: 1fr;
   }
 
+  /* Paginación en Móvil */
   .table-pagination {
+    padding: 12px 14px;
     flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+    align-items: center;
+    gap: 10px;
   }
 
   .pagination-buttons {
+    gap: 8px;
     justify-content: center;
   }
 
+  .page-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .page-size-selector select {
+    font-size: 11px;
+    padding: 3px 6px;
+  }
+
+  /* Modales */
   .modal-overlay {
     padding: 8px;
   }
@@ -3281,6 +3677,6 @@ input:focus, select:focus {
 
   .dossier-modal-body,
   .modal-body {
-    padding: 16px;
+    padding: 14px;
   }
 }

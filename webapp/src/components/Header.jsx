@@ -19,13 +19,13 @@ export default function Header({
   const getTabTitle = () => {
     switch (activeTab) {
       case 'intake':
-        return 'Respuestas de Formulario (Intake)';
+        return 'Intake Atletas';
       case 'client':
-        return 'Ficha de Atleta y Plan Markdown';
+        return 'Ficha Atleta';
       case 'table':
-        return 'Tabla Maestra de Planes';
+        return 'Tabla Planes';
       default:
-        return 'Panel de Control';
+        return 'Panel';
     }
   };
 
@@ -41,14 +41,14 @@ export default function Header({
             aria-label="Abrir menú de navegación"
             title="Abrir menú"
           >
-            <Menu size={22} />
+            <Menu size={20} />
           </button>
 
           <div className="brand-info">
             <div className="brand-badge">
-              <Zap size={13} className="brand-badge-icon" />
+              <Zap size={12} className="brand-badge-icon" />
               <span className="desktop-only">SISTEMA PROFESIONAL DE ATLETAS</span>
-              <span className="mobile-only">{getTabTitle()}</span>
+              <span className="mobile-only">AMAZONA · {getTabTitle()}</span>
             </div>
             <h1 className="brand-title desktop-only">AMAZONA FITNESS</h1>
             <p className="brand-tagline desktop-only">
