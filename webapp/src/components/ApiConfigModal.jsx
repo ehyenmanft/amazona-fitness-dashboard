@@ -39,10 +39,10 @@ export default function ApiConfigModal({ isOpen, onClose, onSave }) {
         <div className="modal-header">
           <div className="modal-title-wrap">
             <Database size={18} className="text-accent" />
-            <h3>Conectar con Supabase & Google Apps Script</h3>
+            <h3>Conexión Supabase & Google Drive</h3>
           </div>
-          <button className="modal-close-btn" onClick={onClose}>
-            <X size={16} />
+          <button type="button" className="modal-close-btn" onClick={onClose} aria-label="Cerrar ventana" title="Cerrar">
+            <X size={20} />
           </button>
         </div>
 
@@ -114,10 +114,13 @@ export default function ApiConfigModal({ isOpen, onClose, onSave }) {
         </div>
 
         <div className="modal-footer">
-          <button className="modal-btn ghost" onClick={handleClear}>
-            Restablecer Conexión Oficial
+          <button type="button" className="modal-btn ghost" onClick={onClose}>
+            Cerrar
           </button>
-          <button className="modal-btn primary" onClick={handleSave}>
+          <button type="button" className="modal-btn outline" onClick={handleClear} title="Restablecer endpoints por defecto">
+            Restablecer Oficial
+          </button>
+          <button type="button" className="modal-btn primary" onClick={handleSave}>
             {isSaved ? (
               <>
                 <Check size={16} />
