@@ -10,11 +10,14 @@ import IntakeListView from './components/IntakeListView';
 import IntakeDetailModal from './components/IntakeDetailModal';
 import ApiConfigModal from './components/ApiConfigModal';
 import LoginScreen from './components/LoginScreen';
+import Sidebar from './components/Sidebar';
+import MobileBottomNav from './components/MobileBottomNav';
 
 import { getCurrentUser, logoutUser } from './utils/auth';
 import { fetchDashboardData, fetchMarkdownPlan } from './utils/api';
 import { parsePlanMarkdown, normalize } from './utils/planParser';
 import { calculateUpcomingRenewals } from './utils/renewals';
+import { normalizeAthlete } from './utils/dateUtils';
 import {
   fetchFormResponsesFromSupabase,
   updateResponseStatusInSupabase,
@@ -34,6 +37,7 @@ export default function App() {
   const [isLiveGAS, setIsLiveGAS] = useState(false);
   const [isLiveSupabase, setIsLiveSupabase] = useState(false);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Data state
   const [dashboardData, setDashboardData] = useState(null);
@@ -77,11 +81,13 @@ export default function App() {
 
       // 2. Cargar respuestas de Formulario desde Google Sheets (Respuestas de formulario 2)
       if (gasData.intakeAthletes && gasData.intakeAthletes.length > 0) {
-        setIntakeResponses(gasData.intakeAthletes);
+        const normalized = gasData.intakeAthletes.map((item, idx) => normalizeAthlete(item, idx));
+        setIntakeResponses(normalized);
       } else {
         // Fallback si Google Sheets está en caché o si el usuario conecta Supabase
         const { data: formResp, isLive: sbLive } = await fetchFormResponsesFromSupabase();
-        setIntakeResponses(formResp);
+        const normalized = (formResp || []).map((item, idx) => normalizeAthlete(item, idx));
+        setIntakeResponses(normalized);
         setIsLiveSupabase(sbLive);
       }
     } catch (err) {
@@ -204,107 +210,144 @@ export default function App() {
   }
 
   return (
-    <div className="app-container">
-      <Header
-        isDarkMode={isDarkMode}
-        onToggleTheme={() => setIsDarkMode(!isDarkMode)}
+    <div className="app-layout">
+      {/* Menú Lateral: fijo en escritorio y drawer táctil en móvil */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        intakeCount={intakeResponses.length}
+        plansCount={dashboardData?.plans?.length || 0}
+        renewalsCount={upcomingRenewals.length}
         isLiveGAS={isLiveGAS}
         isLiveSupabase={isLiveSupabase}
         onOpenSettings={() => setIsConfigOpen(true)}
         onRefresh={loadAllData}
         isLoading={isLoading}
+        isDarkMode={isDarkMode}
+        onToggleTheme={() => setIsDarkMode(prev => !prev)}
         currentUser={currentUser}
         onLogout={handleLogout}
       />
 
-      <main className="app-main-content">
-        {/* Banner de Renovaciones Predictivas */}
-        <RenewalBanner
-          renewals={upcomingRenewals}
-          onSelectClient={handleSelectClientFromAnywhere}
+      <div className="app-main-wrapper">
+        <Header
+          isDarkMode={isDarkMode}
+          onToggleTheme={() => setIsDarkMode(prev => !prev)}
+          isLiveGAS={isLiveGAS}
+          isLiveSupabase={isLiveSupabase}
+          onOpenSettings={() => setIsConfigOpen(true)}
+          onRefresh={loadAllData}
+          isLoading={isLoading}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
+          activeTab={activeTab}
         />
 
-        {/* Tarjetas KPI Superiores */}
-        <KpiCards
-          summary={dashboardData?.summary}
-          onFilterStatus={(status) => {
-            setStatusFilter(status);
-            setActiveTab('table');
-          }}
-        />
+        <main className="app-main-content">
+          {/* Banner de Renovaciones Predictivas */}
+          {upcomingRenewals.length > 0 && (
+            <RenewalBanner
+              renewals={upcomingRenewals}
+              onSelectClient={handleSelectClientFromAnywhere}
+            />
+          )}
 
-        {/* Barra de Filtros y Selector de Pestañas */}
-        <FilterBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          clientFilter={clientFilter}
-          onClientFilterChange={setClientFilter}
-          monthFilter={monthFilter}
-          onMonthFilterChange={setMonthFilter}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          mdFilter={mdFilter}
-          onMdFilterChange={setMdFilter}
-          uniqueClients={dashboardData?.uniqueClients || []}
+          {/* Tarjetas KPI Superiores */}
+          <KpiCards
+            summary={dashboardData?.summary}
+            onFilterStatus={(status) => {
+              setStatusFilter(status);
+              setActiveTab('table');
+            }}
+          />
+
+          {/* Barra de Filtros para Vistas de Planes */}
+          {activeTab !== 'intake' && (
+            <FilterBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              clientFilter={clientFilter}
+              onClientFilterChange={setClientFilter}
+              monthFilter={monthFilter}
+              onMonthFilterChange={setMonthFilter}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              mdFilter={mdFilter}
+              onMdFilterChange={setMdFilter}
+              uniqueClients={dashboardData?.uniqueClients || []}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onResetFilters={handleResetFilters}
+              resultCount={filteredPlans.length}
+              intakeCount={intakeResponses.length}
+            />
+          )}
+
+          {/* VISTA 1: Atletas del Formulario (Respuestas / Intake) */}
+          {activeTab === 'intake' && (
+            <IntakeListView
+              responses={intakeResponses}
+              onSelectResponse={setSelectedIntakeAthlete}
+              onUpdateStatus={handleUpdateIntakeStatus}
+              isLiveSupabase={isLiveSupabase}
+              isLiveGAS={isLiveGAS}
+            />
+          )}
+
+          {/* VISTA 2: Ficha Atleta + Data de Plan */}
+          {activeTab === 'client' && (
+            <div className="dashboard-split-view">
+              <ClientDetail
+                uniqueClients={dashboardData?.uniqueClients || []}
+                selectedClient={selectedClient}
+                onSelectClient={setSelectedClient}
+                plans={dashboardData?.plans || []}
+                mdFiles={dashboardData?.mdFiles || []}
+                selectedFileId={selectedFileId}
+                onSelectFile={handleSelectFile}
+              />
+
+              <PlanViewer
+                planInfo={planInfo}
+                planStruct={planStruct}
+                rawMarkdown={rawMarkdown}
+                isLoading={isLoadingPlan}
+                clientName={selectedClient}
+              />
+            </div>
+          )}
+
+          {/* VISTA 3: Tabla General de Planes */}
+          {activeTab === 'table' && (
+            <PlansTable
+              plans={filteredPlans}
+              onSelectClient={handleSelectClientFromAnywhere}
+            />
+          )}
+        </main>
+
+        {/* Footer */}
+        <footer className="app-footer">
+          <div className="footer-left">
+            <strong>AMAZONA FITNESS DASHBOARD</strong>
+            <span>Entrenamiento de precisión · Nutrición clínica · Optimización metabólica</span>
+          </div>
+          <div className="footer-right">
+            <span>Versión 2.0 Pro · Blanco, Verde & Fucsia · Supabase & Clasp</span>
+          </div>
+        </footer>
+
+        {/* Barra de Navegación Inferior para Móviles */}
+        <MobileBottomNav
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          onResetFilters={handleResetFilters}
-          resultCount={activeTab === 'intake' ? intakeResponses.length : filteredPlans.length}
           intakeCount={intakeResponses.length}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
         />
-
-        {/* VISTA 1: Atletas del Formulario (Respuestas / Intake) */}
-        {activeTab === 'intake' && (
-          <IntakeListView
-            responses={intakeResponses}
-            onSelectResponse={setSelectedIntakeAthlete}
-            onUpdateStatus={handleUpdateIntakeStatus}
-            isLiveSupabase={isLiveSupabase}
-          />
-        )}
-
-        {/* VISTA 2: Ficha Atleta + Data de Plan */}
-        {activeTab === 'client' && (
-          <div className="dashboard-split-view">
-            <ClientDetail
-              uniqueClients={dashboardData?.uniqueClients || []}
-              selectedClient={selectedClient}
-              onSelectClient={setSelectedClient}
-              plans={dashboardData?.plans || []}
-              mdFiles={dashboardData?.mdFiles || []}
-              selectedFileId={selectedFileId}
-              onSelectFile={handleSelectFile}
-            />
-
-            <PlanViewer
-              planInfo={planInfo}
-              planStruct={planStruct}
-              rawMarkdown={rawMarkdown}
-              isLoading={isLoadingPlan}
-              clientName={selectedClient}
-            />
-          </div>
-        )}
-
-        {/* VISTA 3: Tabla General de Planes */}
-        {activeTab === 'table' && (
-          <PlansTable
-            plans={filteredPlans}
-            onSelectClient={handleSelectClientFromAnywhere}
-          />
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="app-footer">
-        <div className="footer-left">
-          <strong>AMAZONA FITNESS DASHBOARD</strong>
-          <span>Entrenamiento de precisión · Nutrición clínica · Optimización metabólica</span>
-        </div>
-        <div className="footer-right">
-          <span>Versión 2.0 Pro · Blanco, Verde & Fucsia · Supabase & Clasp</span>
-        </div>
-      </footer>
+      </div>
 
       {/* Modal Ficha Individual Exhaustiva de Atleta (46 preguntas) */}
       <IntakeDetailModal

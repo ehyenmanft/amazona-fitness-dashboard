@@ -233,12 +233,23 @@ function readIntakeFormResponses_() {
 
       // Normalización para visualización óptima en el dashboard
       obj.nombre = obj['Nombre Completo'] || '';
+      obj.nombre_completo = obj.nombre;
       obj.email = obj['Correo electrónico'] || obj['Dirección de correo electrónico'] || '';
       obj.telefono = obj['Número de Teléfono de contacto (Mensajería, Whatsapp...)'] || '';
       obj.fecha = obj['Marca temporal'] || '';
+      obj.marca_temporal = obj.fecha;
+      obj.pais_ciudad = obj['País y Ciudad de Residencia (Para tener en cuenta zonas horarias y opciones de alimentos locales):'] || '';
+      obj.edad = obj['Edad'] || '';
+      obj.genero = obj['Genero'] || '';
+      obj.estatura_m = obj['Estatura (en mtrs):'] || '';
+      obj.peso_actual_kg = obj['Peso Actual  (en kg):'] || '';
+      obj.peso_ideal_kg = obj['Peso ideal o meta (en kg):'] || '';
       obj.tipo_pago = obj['Método de Pago'] || '';
+      obj.metodo_pago = obj.tipo_pago;
       obj.comprobante_url = obj['Cargue su comprobante de pago'] || '';
-      obj.plan_interes = obj['  ¿Cuál es tu objetivo principal?  '] || '';
+      obj.plan_interes = obj['¿Cuál es tu objetivo principal?'] || obj['  ¿Cuál es tu objetivo principal?  '] || '';
+      obj.objetivo_principal = obj.plan_interes;
+      obj.estado_pago = obj.estado_pago || 'Pendiente de verificación';
       obj.idioma = 'ES';
       obj.raw_headers = headers;
 

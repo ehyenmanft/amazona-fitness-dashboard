@@ -1,5 +1,7 @@
 import React from 'react';
-import { Sun, Moon, Database, RefreshCw, Zap, LogOut, User } from 'lucide-react';
+import {
+  Sun, Moon, Database, RefreshCw, Zap, LogOut, User, Menu, Settings
+} from 'lucide-react';
 
 export default function Header({
   isDarkMode,
@@ -10,34 +12,52 @@ export default function Header({
   onRefresh,
   isLoading,
   currentUser,
-  onLogout
+  onLogout,
+  onOpenSidebar,
+  activeTab
 }) {
+  const getTabTitle = () => {
+    switch (activeTab) {
+      case 'intake':
+        return 'Respuestas de Formulario (Intake)';
+      case 'client':
+        return 'Ficha de Atleta y Plan Markdown';
+      case 'table':
+        return 'Tabla Maestra de Planes';
+      default:
+        return 'Panel de Control';
+    }
+  };
+
   return (
     <header className="app-header">
-      <div className="header-ribbon">
-        <div className="ribbon-text">
-          <span>Amazona Fitness</span>
-          <span className="ribbon-dot">•</span>
-          <span>Planes de Nutrición</span>
-          <span className="ribbon-dot">•</span>
-          <span>Rutinas de Entrenamiento</span>
-          <span className="ribbon-dot">•</span>
-          <span>Google Drive & Sheets en Vivo</span>
-        </div>
-      </div>
-
       <div className="brand-bar">
-        <div className="brand-info">
-          <div className="brand-badge">
-            <Zap size={14} className="brand-badge-icon" />
-            <span>SISTEMA PROFESIONAL DE ATLETAS</span>
+        {/* Lado izquierdo: Botón Menú Móvil + Títulos */}
+        <div className="header-left-group">
+          <button
+            type="button"
+            className="mobile-menu-toggle-btn"
+            onClick={onOpenSidebar}
+            aria-label="Abrir menú de navegación"
+            title="Abrir menú"
+          >
+            <Menu size={22} />
+          </button>
+
+          <div className="brand-info">
+            <div className="brand-badge">
+              <Zap size={13} className="brand-badge-icon" />
+              <span className="desktop-only">SISTEMA PROFESIONAL DE ATLETAS</span>
+              <span className="mobile-only">{getTabTitle()}</span>
+            </div>
+            <h1 className="brand-title desktop-only">AMAZONA FITNESS</h1>
+            <p className="brand-tagline desktop-only">
+              Gestión integral de clientes, intake de cuestionarios, renovaciones y planes individualizados
+            </p>
           </div>
-          <h1 className="brand-title">AMAZONA FITNESS</h1>
-          <p className="brand-tagline">
-            Gestión integral de clientes, intake de cuestionarios, renovaciones y planes individualizados
-          </p>
         </div>
 
+        {/* Lado derecho: Acciones rápidas */}
         <div className="header-actions">
           {/* Connection Status Pill */}
           <div
@@ -46,8 +66,8 @@ export default function Header({
             title="Haz clic para ver o configurar conexiones de Google Drive, Sheets y Supabase"
           >
             <Database size={14} />
-            <span className="status-label">
-              {isLiveGAS ? 'Google Drive & Sheets en Vivo' : isLiveSupabase ? 'Supabase Conectado' : 'Modo Local'}
+            <span className="status-label desktop-only">
+              {isLiveGAS ? 'Google Drive & Sheets' : isLiveSupabase ? 'Supabase' : 'Modo Local'}
             </span>
           </div>
 
@@ -55,7 +75,7 @@ export default function Header({
             className="action-btn icon-btn"
             onClick={onRefresh}
             disabled={isLoading}
-            title="Recargar datos"
+            title="Recargar datos desde Google Drive y Sheets"
           >
             <RefreshCw size={16} className={isLoading ? 'spin' : ''} />
           </button>
@@ -64,14 +84,15 @@ export default function Header({
             className="action-btn theme-btn"
             onClick={onToggleTheme}
             aria-label="Cambiar tema"
+            title={isDarkMode ? 'Modo Día' : 'Modo Noche'}
           >
             {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-            <span>{isDarkMode ? 'Modo Día' : 'Modo Noche'}</span>
+            <span className="desktop-only">{isDarkMode ? 'Día' : 'Noche'}</span>
           </button>
 
           {/* User profile & logout */}
           {currentUser && (
-            <div className="user-profile-widget">
+            <div className="user-profile-widget desktop-only">
               <div className="user-avatar-pill">
                 <User size={14} />
                 <span className="user-name-text">{currentUser.name}</span>

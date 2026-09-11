@@ -3,6 +3,7 @@ import {
   X, User, Target, Dumbbell, Salad, HeartPulse, CreditCard,
   ExternalLink, CheckCircle2, Clock, MapPin, Phone, Mail, Calendar
 } from 'lucide-react';
+import { formatDateDisplay } from '../utils/dateUtils';
 
 export default function IntakeDetailModal({
   athlete,
@@ -61,7 +62,7 @@ export default function IntakeDetailModal({
                 )}
                 <span className="contact-chip">
                   <Calendar size={12} />
-                  <span>Enviado: {new Date(athlete.marca_temporal || athlete.created_at).toLocaleDateString()}</span>
+                  <span>Enviado: {athlete.fecha_display || formatDateDisplay(athlete.marca_temporal || athlete.created_at)}</span>
                 </span>
               </div>
             </div>
